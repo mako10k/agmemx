@@ -1,0 +1,64 @@
+# Existing .pert plans should normally be maintained through perttool commands; direct DSL editing bypasses goal/DAG owner-confirmation checks.
+project AGMEMX_CLI:
+  version 1
+  title "CLI の手引き、補完、エラー案内"
+  description "完了条件は、docs/cli-surface.md の表面が実装され、次が通ることである。agmemx help と各コマンドの --help が同じレジストリを表示する。text モードの拒否は標準エラーに error、hint、help を書き、修復は実行しない。未知コマンドは実行せず近い名前を一つ示す。json モードは現行の code と message だけを標準出力に書き、終了コード 0 と 1 の標準エラーは空である。Bash 補完は agmemx __completion --bash と completions/agmemx.bash で、記憶とプロバイダを読まない。man と make install はヘルプと同じコマンドを置く。受入セッションは --format json で現行の 11 手順を通る。"
+  as_of 2026-09-22
+  duration_unit point
+  velocity 2p/1d
+  finish CLI_SURFACE_READY
+
+milestone START:
+  title "記憶 CLI の受入が seal 済み"
+  state reached
+
+milestone HELP:
+  title "help と --help が同じレジストリを表示する"
+  description "目録、コマンド、concepts、usecases を含む。ヘルプはストアも埋め込みプロバイダも開かない。"
+
+milestone ERRORS:
+  title "text の案内が出て JSON 契約は維持される"
+  description "error、hint、help を標準エラーに書く。hint はコマンドを実行しない。json モードの拒否形は現行契約のままである。"
+
+milestone COMPLETE:
+  title "Bash 補完がレジストリから出る"
+  description "薄いラッパーと __completion --bash。モードは plain、file、dir、none。記憶オブジェクトと鍵は候補にしない。"
+
+milestone MANUAL:
+  title "man と install がヘルプと同じコマンドを置く"
+  description "docs/agmemx.1 と、bin、bash-completion、man1 への make install である。"
+
+milestone CLI_SURFACE_READY:
+  title "受入セッションと表面のテストが通る"
+  description "受入セッションは --format json で現行の 11 手順を通る。help、text エラー、補完のテストも通る。"
+
+task IMPLEMENT_HELP START -> HELP:
+  title "サブコマンドのヘルプを実装する"
+  description "init、observe、belief add、relation add、search、domain attach、embed reindex、help、schema を一つのレジストリにする。互換の relate、domain-attach、reindex も同じ操作を指す。フィールドフラグと JSON 標準入力は排他である。"
+  duration 3p
+
+task IMPLEMENT_ERRORS START -> ERRORS:
+  title "text のエラー案内を実装する"
+  description "拒否コードごとに hint と help topic を持たせる。未知コマンドは実行せず近い名前を一つ示す。__completion は候補に出さない。"
+  duration 3p
+
+task IMPLEMENT_COMPLETION HELP -> COMPLETE:
+  title "Bash 補完プロトコルを実装する"
+  description "completions/agmemx.bash と __completion --bash を追加し、コマンドとフラグの回帰テストを書く。"
+  duration 3p
+
+task IMPLEMENT_MANUAL HELP -> MANUAL:
+  title "man と install を実装する"
+  description "docs/agmemx.1 をレジストリと一致させ、PREFIX 配下へ binary、補完、man を入れる。"
+  duration 2p
+
+task ACCEPT_SURFACE MANUAL -> CLI_SURFACE_READY:
+  title "受入セッションを新しい表面で通す"
+  description "TestAcceptanceSession は --format json を明示しても 11 手順を通る。help、text エラー、補完のテストを追加し、ソースとテストを sealgraph に登録する。"
+  duration 2p
+
+gate COMPLETE_BEFORE_READY COMPLETE -> CLI_SURFACE_READY:
+  reason "受入は補完プロトコルのテストを含む"
+
+gate ERRORS_BEFORE_READY ERRORS -> CLI_SURFACE_READY:
+  reason "受入は text のエラー案内を含む"
