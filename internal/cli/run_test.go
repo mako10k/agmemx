@@ -299,6 +299,7 @@ func contractMessage(code string) string {
 		"text_empty":                   "本文が空である",
 		"observation_reason_forbidden": "観測の理由は受け付けない",
 		"reason_not_found":             "理由の対象が存在しない",
+		"cross_domain_next":            "次発話は同一ドメインに限る",
 		"reason_kind_invalid":          "信念の理由種別が契約にない",
 		"reference_escapes_domain":     "Reference の源が解決ディレクトリの外である",
 		"reference_not_found":          "Reference の源ファイルが存在しない",
