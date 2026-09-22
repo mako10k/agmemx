@@ -74,6 +74,7 @@ task IMPLEMENT_QUERY ORDER -> QUERY:
   title "自然文検索の構造化スライスを実装する"
   description "件数上限、信念と観測の分離、Reference の源と範囲だけを返す検索を実装する。順位は埋め込みキャッシュを使う。"
   duration 3p
+  status done
 
 gate SCOPE_BEFORE_QUERY SCOPE -> QUERY:
   reason "検索範囲はドメイン部分木の実装に依存する"
@@ -185,3 +186,18 @@ work_event IMPLEMENT_EMBED_FINISH:
   occurred_at 2026-09-22T18:09:53+09:00
   active_time 1939/3600h
   effort 0.45ph
+
+work_event IMPLEMENT_QUERY_START:
+  model 1
+  task IMPLEMENT_QUERY
+  kind start
+  occurred_at 2026-09-22T18:12:17+09:00
+  planned_value 3p
+
+work_event IMPLEMENT_QUERY_FINISH:
+  model 1
+  task IMPLEMENT_QUERY
+  kind finish
+  occurred_at 2026-09-22T18:13:50+09:00
+  active_time 31/1200h
+  effort 31/1200ph
