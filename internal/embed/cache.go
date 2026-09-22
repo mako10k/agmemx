@@ -8,6 +8,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 )
 
@@ -28,7 +29,51 @@ type stored struct {
 
 // Put writes one vector. The namespace dimension is fixed by the first vector.
 func Put(cacheHome string, key Key, vector []float64) error {
-	dir := namespaceDir(cacheHome, key)
+	return writeVector(namespaceDir(cacheHome, key), key, vector)
+}
+
+// StagePut writes a vector into an unpublished stage for key's namespace.
+// A dimension already published for that namespace is enforced.
+// The published namespace is not modified.
+func StagePut(cacheHome string, key Key, vector []float64) error {
+	dir := stageDir(cacheHome, key)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+	if err := seedDimension(cacheHome, key, dir); err != nil {
+		return err
+	}
+	return writeVector(dir, key, vector)
+}
+
+// PublishStage installs a completed stage into the namespace and removes the stage.
+// A missing stage publishes nothing. An existing namespace keeps vectors that were not staged.
+func PublishStage(cacheHome string, key Key) error {
+	stage := stageDir(cacheHome, key)
+	if _, err := os.Stat(stage); errors.Is(err, os.ErrNotExist) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	dest := namespaceDir(cacheHome, key)
+	if _, err := os.Stat(dest); errors.Is(err, os.ErrNotExist) {
+		if err := os.MkdirAll(filepath.Dir(dest), 0o700); err != nil {
+			return err
+		}
+		return os.Rename(stage, dest)
+	} else if err != nil {
+		return err
+	}
+	return mergeStage(stage, dest)
+}
+
+// DropStage removes an unpublished stage. A missing stage is not an error.
+// The published namespace is left in place.
+func DropStage(cacheHome string, key Key) error {
+	return os.RemoveAll(stageDir(cacheHome, key))
+}
+
+func writeVector(dir string, key Key, vector []float64) error {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
@@ -50,6 +95,44 @@ func Put(cacheHome string, key Key, vector []float64) error {
 	}
 	body = append(body, '\n')
 	return writeAtomic(filepath.Join(dir, textName(key.Text)), body)
+}
+
+func seedDimension(cacheHome string, key Key, stage string) error {
+	destDim := filepath.Join(stage, "dimension")
+	if _, err := os.Stat(destDim); err == nil {
+		return nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	raw, err := os.ReadFile(filepath.Join(namespaceDir(cacheHome, key), "dimension"))
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(destDim, raw, 0o600)
+}
+
+func mergeStage(stage, dest string) error {
+	entries, err := os.ReadDir(stage)
+	if err != nil {
+		return err
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join(stage, entry.Name()))
+		if err != nil {
+			return err
+		}
+		if err := writeAtomic(filepath.Join(dest, entry.Name()), raw); err != nil {
+			return err
+		}
+	}
+	return os.RemoveAll(stage)
 }
 
 // Get returns a stored vector.
@@ -80,6 +163,11 @@ func Delete(cacheHome string, key Key) error {
 func namespaceDir(cacheHome string, key Key) string {
 	sum := sha256.Sum256([]byte(key.Provider + "\n" + key.BaseURL + "\n" + key.Model))
 	return filepath.Join(cacheHome, "agmemx", hex.EncodeToString(sum[:]))
+}
+
+func stageDir(cacheHome string, key Key) string {
+	sum := sha256.Sum256([]byte(key.Provider + "\n" + key.BaseURL + "\n" + key.Model))
+	return filepath.Join(cacheHome, "agmemx", "stage-"+hex.EncodeToString(sum[:]))
 }
 
 func textName(text string) string {
