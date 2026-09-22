@@ -83,6 +83,7 @@ task ACCEPTANCE QUERY -> CLI_READY:
   title "受入セッションをテストとして通す"
   description "契約文書の CLI 列を、ネットワークも既存の記憶も使わないテストにする。追加したソースとテストは sealgraph の由来規則に従って登録する。"
   duration 2p
+  status done
 
 milestone EMBED:
   title "設定したプロバイダで埋め込み索引を作れる"
@@ -201,3 +202,18 @@ work_event IMPLEMENT_QUERY_FINISH:
   occurred_at 2026-09-22T18:13:50+09:00
   active_time 31/1200h
   effort 31/1200ph
+
+work_event ACCEPTANCE_START:
+  model 1
+  task ACCEPTANCE
+  kind start
+  occurred_at 2026-09-22T18:17:24+09:00
+  planned_value 2p
+
+work_event ACCEPTANCE_FINISH:
+  model 1
+  task ACCEPTANCE
+  kind finish
+  occurred_at 2026-09-22T18:18:55+09:00
+  active_time 91/3600h
+  effort 91/3600ph
