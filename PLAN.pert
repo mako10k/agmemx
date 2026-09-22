@@ -1,0 +1,139 @@
+# Existing .pert plans should normally be maintained through perttool commands; direct DSL editing bypasses goal/DAG owner-confirmation checks.
+project AGMEMX:
+  version 5
+  title "CLI から記憶を読み書きできる"
+  description "完了条件は、一時ディレクトリと一時の XDG_DATA_HOME だけで、公開スキーマどおりの CLI 列が通ることである。呼び出しは厳密な JSON に限り、応答は件数上限つきの構造化 JSON である。セッションでは、ファイルのスパンを Reference とする観測を登録できる。信念を観測の理由にした登録は安定した拒否コードで失敗し、オブジェクトを残さない。信念の理由は、無し、信念、観測、自然文を登録できる。二つの対象が矛盾しているという内容は、それらへリンクした信念として登録できる。同一ドメインの次発話を読み戻せる。別ドメイン間の次発話は拒否する。呼び出し側が与えた期間を同じ値で読み戻せる。自然文の検索は、解決ディレクトリを根とする部分木から、信念と観測を分けたスライスを返す。スライスは Reference の源と範囲を含み、源ファイル全体は含めない。キーワードが重ならない自然文でも、設定した埋め込みにより対応する信念または観測がスライスに入る。プロバイダは ollama、openai、または OpenAI 互換の base URL を明示して一つ選ぶ。受入セッションの結合は決定的なフィクスチャプロバイダで行い、実サーバへの接続は完了条件にしない。ollama と openai のリクエスト形は契約テストで固定する。子ディレクトリを解決した検索は親の記録を返さず、親からの検索は子を含む。ドメイン所属の付け替えは索引のみを変え、オブジェクトの bytes は増えない。--dir / と相対パスの XDG_DATA_HOME は拒否する。検索器の学習、会話ログからの自動抽出、期間が指す意味の確定は、この完了条件に含まない。"
+  as_of 2026-09-22
+  duration_unit point
+  velocity 2p/1d
+  finish CLI_READY
+
+milestone START:
+  title "要件とアーキテクチャを seal 済み"
+  state reached
+
+milestone SCHEMA:
+  title "受入セッションの契約が文書化されている"
+  description "コマンド、JSON、安定した拒否コード、部分書き込み禁止を固定する。埋め込みプロバイダの選択と、接続失敗時の拒否を含む。期間の意味の確定はこの契約に含めない。"
+
+milestone STORE:
+  title "一時 XDG 上で解決ディレクトリの空ドメインを作れる"
+  description "XDG_DATA_HOME の既定と相対パス拒否、--dir と起動時カレントの正規化、オブジェクトとドメイン索引の分離までを含む。"
+
+milestone RECORD:
+  title "観測と信念の理由制約を CLI で読み戻せる"
+  description "Reference 付き観測、信念の四種の理由、信念を観測の理由にした場合の拒否、矛盾を表す信念リンクを含む。"
+
+milestone ORDER:
+  title "同一ドメインの順序と期間を読み戻せる"
+  description "次発話は同一ドメイン内だけを受け付ける。期間は呼び出し側が与えた値をそのまま返す。"
+
+milestone SCOPE:
+  title "部分木、--dir、所属の付け替えを読み戻せる"
+  description "子の解決では親を含めない。親の解決では子を含める。付け替えは索引のみを変え、オブジェクト bytes を複製しない。"
+
+milestone QUERY:
+  title "自然文検索が上限つきの構造化スライスを返す"
+  description "信念と観測を分けて返す。Reference は源と範囲にとどめ、源ファイル全体は返さない。順位は設定した埋め込みによる。"
+
+milestone CLI_READY:
+  title "受入セッション全体が外部依存なしで通る"
+  description "一時ディレクトリと一時の XDG_DATA_HOME だけで、契約どおりの CLI 列が通る。意味検索の結合はフィクスチャプロバイダで行い、実サーバへは接続しない。これが計画の完了条件である。"
+
+task LOCK_SCHEMA START -> SCHEMA:
+  title "受入セッションの契約を文書化する"
+  description "完了条件の各操作について、コマンド、フィールド、拒否コードを一文書に固定する。実装はこの契約を増やす思考を呼び出し側に戻さない。"
+  duration 2p
+  status done
+
+task IMPLEMENT_STORE SCHEMA -> STORE:
+  title "XDG 配置とドメイン解決を実装する"
+  description "記憶本体を XDG_DATA_HOME 配下に置き、解決ディレクトリの正規化と空ドメインの作成をテストする。"
+  duration 3p
+  status done
+
+task IMPLEMENT_RECORDS STORE -> RECORD:
+  title "観測、信念、矛盾の表現を実装する"
+  description "Reference、信念の理由、観測の理由拒否、矛盾を表す信念リンクを CLI とテストで読み戻す。"
+  duration 4p
+  status done
+
+task IMPLEMENT_ORDER RECORD -> ORDER:
+  title "同一ドメインの次発話と期間を実装する"
+  description "順序は同一ドメインに限り、期間は与えた値の保存と読み戻しに限る。"
+  duration 2p
+
+task IMPLEMENT_SCOPE RECORD -> SCOPE:
+  title "部分木範囲と所属の付け替えを実装する"
+  description "--dir、親と子の検索範囲、索引だけの付け替えをテストする。"
+  duration 3p
+
+task IMPLEMENT_QUERY ORDER -> QUERY:
+  title "自然文検索の構造化スライスを実装する"
+  description "件数上限、信念と観測の分離、Reference の源と範囲だけを返す検索を実装する。順位は埋め込みキャッシュを使う。"
+  duration 3p
+
+gate SCOPE_BEFORE_QUERY SCOPE -> QUERY:
+  reason "検索範囲はドメイン部分木の実装に依存する"
+
+task ACCEPTANCE QUERY -> CLI_READY:
+  title "受入セッションをテストとして通す"
+  description "契約文書の CLI 列を、ネットワークも既存の記憶も使わないテストにする。追加したソースとテストは sealgraph の由来規則に従って登録する。"
+  duration 2p
+
+milestone EMBED:
+  title "設定したプロバイダで埋め込み索引を作れる"
+  description "ollama と openai、および OpenAI 互換の base URL を明示して選べる。ベクトルはプロバイダとモデルごとにキャッシュし、失敗時はオブジェクトを残さない。"
+
+task IMPLEMENT_EMBED RECORD -> EMBED:
+  title "埋め込みプロバイダとキャッシュを実装する"
+  description "ollama の /api/embed と OpenAI の /v1/embeddings を実装する。契約テストは記録した応答を使い、受入の結合はフィクスチャプロバイダを使う。再索引は明示操作にする。"
+  duration 4p
+
+gate EMBED_BEFORE_QUERY EMBED -> QUERY:
+  reason "自然文検索の順位は埋め込み索引に依存する"
+
+work_event LOCK_SCHEMA_START:
+  model 1
+  task LOCK_SCHEMA
+  kind start
+  occurred_at 2026-09-22T15:12:30+09:00
+  planned_value 2p
+
+work_event LOCK_SCHEMA_FINISH:
+  model 1
+  task LOCK_SCHEMA
+  kind finish
+  occurred_at 2026-09-22T15:17:12+09:00
+  active_time 47/600h
+  effort 47/600ph
+
+work_event IMPLEMENT_STORE_START:
+  model 1
+  task IMPLEMENT_STORE
+  kind start
+  occurred_at 2026-09-22T16:33:05+09:00
+  planned_value 3p
+
+work_event IMPLEMENT_STORE_FINISH:
+  model 1
+  task IMPLEMENT_STORE
+  kind finish
+  occurred_at 2026-09-22T16:39:35+09:00
+  active_time 13/120h
+  effort 13/120ph
+
+work_event IMPLEMENT_RECORDS_START:
+  model 1
+  task IMPLEMENT_RECORDS
+  kind start
+  occurred_at 2026-09-22T16:43:45+09:00
+  planned_value 4p
+
+work_event IMPLEMENT_RECORDS_FINISH:
+  model 1
+  task IMPLEMENT_RECORDS
+  kind finish
+  occurred_at 2026-09-22T16:50:32+09:00
+  active_time 407/3600h
+  effort 407/3600ph
