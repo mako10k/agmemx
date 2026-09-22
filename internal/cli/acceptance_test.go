@@ -47,6 +47,7 @@ func TestAcceptanceSession(t *testing.T) {
 		"XDG_STATE_HOME=" + state,
 	}
 	flags := []string{
+		"--format", "json",
 		"--embed-provider", "fixture",
 		"--embed-model", "fixture-model",
 		"--embed-fixture", fixture,
@@ -87,11 +88,11 @@ func TestAcceptanceSession(t *testing.T) {
 	conflict := mustCreate(t, bin, root, env, append(append([]string{"--dir", root}, flags...), "believe"), `{"text":"records-conflict","about":["`+fromText.ID+`","`+fromObs.ID+`"]}`)
 	childObs := mustCreate(t, bin, child, env, append(append([]string{"--dir", child}, flags...), "observe"), `{"text":"child-note","reference":{"source":"b.txt","start":0,"end":4}}`)
 
-	same := mustCLI(t, bin, root, env, append([]string{"--dir", root, "relate"}, []string{}...), `{"kind":"next","from":"`+obs.ID+`","to":"`+none.ID+`"}`)
+	same := mustCLI(t, bin, root, env, []string{"--format", "json", "--dir", root, "relate"}, `{"kind":"next","from":"`+obs.ID+`","to":"`+none.ID+`"}`)
 	if same["kind"] != "next" || same["domain"] != canonical(t, root) || same["from"] != obs.ID || same["to"] != none.ID {
 		t.Fatalf("relate %#v", same)
 	}
-	code, stderr, raw = callCLI(t, bin, root, env, []string{"--dir", root, "relate"}, `{"kind":"next","from":"`+obs.ID+`","to":"`+childObs.ID+`"}`)
+	code, stderr, raw = callCLI(t, bin, root, env, []string{"--format", "json", "--dir", root, "relate"}, `{"kind":"next","from":"`+obs.ID+`","to":"`+childObs.ID+`"}`)
 	assertCLICode(t, raw, stderr, code, 1, "cross_domain_next")
 
 	found := searchCLI(t, bin, root, env, append(append([]string{"--dir", root}, flags...), "search"), `{"query":"beta-lookup"}`)
@@ -151,7 +152,7 @@ func TestAcceptanceSession(t *testing.T) {
 		}
 	}
 
-	attached := mustCreate(t, bin, root, env, append([]string{"--dir", root, "domain-attach"}, []string{}...), `{"id":"`+obs.ID+`","domain":"`+other+`"}`)
+	attached := mustCreate(t, bin, root, env, []string{"--format", "json", "--dir", root, "domain-attach"}, `{"id":"`+obs.ID+`","domain":"`+other+`"}`)
 	if attached.ContentSHA256 != obs.ContentSHA256 {
 		t.Fatalf("hash %s became %s", obs.ContentSHA256, attached.ContentSHA256)
 	}
@@ -159,14 +160,14 @@ func TestAcceptanceSession(t *testing.T) {
 		t.Fatalf("attached domain %s", attached.Domain)
 	}
 
-	code, stderr, raw = callCLI(t, bin, root, env, []string{"--dir", "/", "init"}, `{}`)
+	code, stderr, raw = callCLI(t, bin, root, env, []string{"--format", "json", "--dir", "/", "init"}, `{}`)
 	assertCLICode(t, raw, stderr, code, 1, "dir_is_root")
 	code, stderr, raw = callCLI(t, bin, root, []string{
 		"HOME=" + t.TempDir(),
 		"XDG_DATA_HOME=rel",
 		"XDG_CACHE_HOME=" + cache,
 		"XDG_STATE_HOME=" + state,
-	}, []string{"init"}, `{}`)
+	}, []string{"--format", "json", "init"}, `{}`)
 	assertCLICode(t, raw, stderr, code, 1, "xdg_relative")
 }
 

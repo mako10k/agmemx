@@ -42,21 +42,25 @@ task IMPLEMENT_ERRORS START -> ERRORS:
   title "text のエラー案内を実装する"
   description "拒否コードごとに hint と help topic を持たせる。未知コマンドは実行せず近い名前を一つ示す。__completion は候補に出さない。"
   duration 3p
+  status done
 
 task IMPLEMENT_COMPLETION HELP -> COMPLETE:
   title "Bash 補完プロトコルを実装する"
   description "completions/agmemx.bash と __completion --bash を追加し、コマンドとフラグの回帰テストを書く。"
   duration 3p
+  status done
 
 task IMPLEMENT_MANUAL HELP -> MANUAL:
   title "man と install を実装する"
   description "docs/agmemx.1 をレジストリと一致させ、PREFIX 配下へ binary、補完、man を入れる。"
   duration 2p
+  status done
 
 task ACCEPT_SURFACE MANUAL -> CLI_SURFACE_READY:
   title "受入セッションを新しい表面で通す"
   description "TestAcceptanceSession は --format json を明示しても 11 手順を通る。help、text エラー、補完のテストを追加し、ソースとテストを sealgraph に登録する。"
   duration 2p
+  status done
 
 gate COMPLETE_BEFORE_READY COMPLETE -> CLI_SURFACE_READY:
   reason "受入は補完プロトコルのテストを含む"
@@ -78,3 +82,63 @@ work_event IMPLEMENT_HELP_FINISH:
   occurred_at 2026-09-22T20:25:37+09:00
   active_time 41/600h
   effort 41/600ph
+
+work_event IMPLEMENT_MANUAL_START:
+  model 1
+  task IMPLEMENT_MANUAL
+  kind start
+  occurred_at 2026-09-22T20:34:24+09:00
+  planned_value 2p
+
+work_event IMPLEMENT_COMPLETION_START:
+  model 1
+  task IMPLEMENT_COMPLETION
+  kind start
+  occurred_at 2026-09-22T20:34:24+09:00
+  planned_value 3p
+
+work_event IMPLEMENT_ERRORS_START:
+  model 1
+  task IMPLEMENT_ERRORS
+  kind start
+  occurred_at 2026-09-22T20:34:24+09:00
+  planned_value 3p
+
+work_event IMPLEMENT_ERRORS_FINISH:
+  model 1
+  task IMPLEMENT_ERRORS
+  kind finish
+  occurred_at 2026-09-22T20:59:19+09:00
+  active_time 299/720h
+  effort 253/720ph
+
+work_event IMPLEMENT_COMPLETION_FINISH:
+  model 1
+  task IMPLEMENT_COMPLETION
+  kind finish
+  occurred_at 2026-09-22T20:59:19+09:00
+  active_time 299/720h
+  effort 107/720ph
+
+work_event IMPLEMENT_MANUAL_FINISH:
+  model 1
+  task IMPLEMENT_MANUAL
+  kind finish
+  occurred_at 2026-09-22T20:59:19+09:00
+  active_time 299/720h
+  effort 17/240ph
+
+work_event ACCEPT_SURFACE_START:
+  model 1
+  task ACCEPT_SURFACE
+  kind start
+  occurred_at 2026-09-22T20:51:19+09:00
+  planned_value 2p
+
+work_event ACCEPT_SURFACE_FINISH:
+  model 1
+  task ACCEPT_SURFACE
+  kind finish
+  occurred_at 2026-09-22T20:59:19+09:00
+  active_time 2/15h
+  effort 2/15ph
