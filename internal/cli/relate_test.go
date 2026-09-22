@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"agmemx/internal/store"
 )
 
 func TestRelateSameDomainWithoutEmbedProvider(t *testing.T) {
@@ -95,6 +97,11 @@ func TestRelateSameDomainWithoutEmbedProvider(t *testing.T) {
 	assertNextFile(t, data, third.Domain, []nextEdge{{Kind: "next", From: third.ID, To: fourth.ID}})
 
 	out, errOut, code = run(t, []string{"relate"}, []byte(`{"kind":"next","from":"`+second.ID+`","to":"`+third.ID+`"}`), env, other)
+	assertRelateReject(t, out, errOut, code, 1, "cross_domain_next", "次発話は同一ドメインに限る")
+	if err := store.Relocate(data, second.Domain, third.Domain, second.ID); err != nil {
+		t.Fatal(err)
+	}
+	out, errOut, code = run(t, []string{"relate"}, []byte(`{"kind":"next","from":"`+first.ID+`","to":"`+second.ID+`"}`), env, other)
 	assertRelateReject(t, out, errOut, code, 1, "cross_domain_next", "次発話は同一ドメインに限る")
 	assertNextFile(t, data, first.Domain, []nextEdge{{Kind: "next", From: first.ID, To: second.ID}})
 	if _, err := os.Stat(relationFile(data, filepath.Join(other))); !os.IsNotExist(err) {

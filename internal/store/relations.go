@@ -27,9 +27,28 @@ func RelationPath(dataHome, domain string) string {
 	return filepath.Join(LayoutOf(dataHome).Root, "relations", hex.EncodeToString(sum[:])+".json")
 }
 
-// ObjectDomain returns the domain recorded on the object when it was committed.
-// ok is false when the id is absent or the object has no domain.
+// ObjectDomain returns the domain index that currently lists id.
+// ok is false when the id is absent. The domain field inside the object file
+// is not membership after domain-attach.
 func ObjectDomain(dataHome, id string) (string, bool, error) {
+	indexes, err := readIndexes(dataHome)
+	if err != nil {
+		return "", false, err
+	}
+	found := ""
+	ok := false
+	for _, idx := range indexes {
+		if !containsID(idx.IDs, id) {
+			continue
+		}
+		if !ok || idx.Domain < found {
+			found = idx.Domain
+			ok = true
+		}
+	}
+	if ok {
+		return found, true, nil
+	}
 	raw, err := Load(dataHome, id)
 	if errors.Is(err, os.ErrNotExist) {
 		return "", false, nil
