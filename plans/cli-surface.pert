@@ -1,6 +1,6 @@
 # Existing .pert plans should normally be maintained through perttool commands; direct DSL editing bypasses goal/DAG owner-confirmation checks.
 project AGMEMX_CLI:
-  version 1
+  version 5
   title "CLI の手引き、補完、エラー案内"
   description "完了条件は、docs/cli-surface.md の表面が実装され、次が通ることである。agmemx help と各コマンドの --help が同じレジストリを表示する。text モードの拒否は標準エラーに error、hint、help を書き、修復は実行しない。未知コマンドは実行せず近い名前を一つ示す。json モードは現行の code と message だけを標準出力に書き、終了コード 0 と 1 の標準エラーは空である。Bash 補完は agmemx __completion --bash と completions/agmemx.bash で、記憶とプロバイダを読まない。man と make install はヘルプと同じコマンドを置く。受入セッションは --format json で現行の 11 手順を通る。"
   as_of 2026-09-22
@@ -36,6 +36,7 @@ task IMPLEMENT_HELP START -> HELP:
   title "サブコマンドのヘルプを実装する"
   description "init、observe、belief add、relation add、search、domain attach、embed reindex、help、schema を一つのレジストリにする。互換の relate、domain-attach、reindex も同じ操作を指す。フィールドフラグと JSON 標準入力は排他である。"
   duration 3p
+  status done
 
 task IMPLEMENT_ERRORS START -> ERRORS:
   title "text のエラー案内を実装する"
@@ -62,3 +63,18 @@ gate COMPLETE_BEFORE_READY COMPLETE -> CLI_SURFACE_READY:
 
 gate ERRORS_BEFORE_READY ERRORS -> CLI_SURFACE_READY:
   reason "受入は text のエラー案内を含む"
+
+work_event IMPLEMENT_HELP_START:
+  model 1
+  task IMPLEMENT_HELP
+  kind start
+  occurred_at 2026-09-22T20:21:31+09:00
+  planned_value 3p
+
+work_event IMPLEMENT_HELP_FINISH:
+  model 1
+  task IMPLEMENT_HELP
+  kind finish
+  occurred_at 2026-09-22T20:25:37+09:00
+  active_time 41/600h
+  effort 41/600ph

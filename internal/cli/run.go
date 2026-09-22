@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"agmemx/internal/domain"
@@ -20,6 +21,25 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer, environ []str
 	if rej != nil {
 		writeReject(stdout, rej)
 		return rej.exit
+	}
+	if opts.showHelp || opts.command == "help" {
+		text, ok := helpText(opts.topic)
+		if !ok {
+			fmt.Fprintf(stdout, "未知のヘルプです: %s\n\n%s", opts.topic, catalogHelp())
+			return 2
+		}
+		fmt.Fprint(stdout, text)
+		return 0
+	}
+	if opts.command == "schema" {
+		writeOK(stdout, schemaDocument())
+		return 0
+	}
+	if !opts.flagMode && isTerminal(stdin) {
+		if text, ok := helpText(helpTopicFor(opts.command)); ok {
+			fmt.Fprint(stdout, text)
+			return 0
+		}
 	}
 	roots, err := xdg.Resolve(environ)
 	if err != nil {
@@ -38,7 +58,21 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer, environ []str
 		writeReject(stdout, reject("dir_is_root", 1))
 		return 1
 	}
-	body, rej := readObject(stdin)
+	var body map[string]json.RawMessage
+	if opts.flagMode {
+		raw, err := io.ReadAll(stdin)
+		if err != nil {
+			writeReject(stdout, reject("invalid_json", 2))
+			return 2
+		}
+		if len(bytes.TrimSpace(raw)) != 0 {
+			writeReject(stdout, reject("invalid_flag", 2))
+			return 2
+		}
+		body, rej = fieldsToBody(opts.command, opts.fields)
+	} else {
+		body, rej = readObject(stdin)
+	}
 	if rej != nil {
 		writeReject(stdout, rej)
 		return rej.exit
@@ -146,14 +180,24 @@ type options struct {
 	baseURL  string
 	keyEnv   string
 	fixture  string
+	format   string
 	command  string
+	showHelp bool
+	topic    string
+	flagMode bool
+	fields   map[string][]string
 	seen     map[string]bool
 }
 
 func parseArgs(args []string) (options, *rejection) {
-	opt := options{seen: map[string]bool{}}
+	opt := options{seen: map[string]bool{}, fields: map[string][]string{}}
+	var words []string
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
+		if arg == "--help" {
+			opt.showHelp = true
+			continue
+		}
 		if strings.HasPrefix(arg, "--") {
 			name, val, inline := strings.Cut(arg, "=")
 			if !inline {
@@ -166,42 +210,121 @@ func parseArgs(args []string) (options, *rejection) {
 			if val == "" {
 				return options{}, reject("invalid_flag", 2)
 			}
-			if opt.seen[name] || opt.command != "" {
-				return options{}, reject("invalid_flag", 2)
-			}
-			opt.seen[name] = true
-			switch name {
-			case "--dir":
-				opt.dir = val
-			case "--embed-provider":
-				switch val {
-				case "ollama", "openai", "fixture":
-					opt.provider = val
-				default:
+			if len(words) == 0 {
+				if opt.seen[name] {
 					return options{}, reject("invalid_flag", 2)
 				}
-			case "--embed-model":
-				opt.model = val
-			case "--embed-base-url":
-				opt.baseURL = val
-			case "--embed-api-key-env":
-				opt.keyEnv = val
-			case "--embed-fixture":
-				opt.fixture = val
-			default:
-				return options{}, reject("invalid_flag", 2)
+				opt.seen[name] = true
+				if rej := applyGlobal(&opt, name, val); rej != nil {
+					return options{}, rej
+				}
+				continue
 			}
+			if name != "--about" {
+				if _, exists := opt.fields[name]; exists {
+					return options{}, reject("invalid_flag", 2)
+				}
+			}
+			opt.fields[name] = append(opt.fields[name], val)
+			opt.flagMode = true
 			continue
 		}
-		if opt.command != "" {
+		if opt.flagMode {
 			return options{}, reject("invalid_command", 2)
 		}
-		opt.command = arg
+		words = append(words, arg)
 	}
-	if opt.command == "" {
+	if opt.showHelp && len(words) == 0 {
+		opt.command = "help"
+		return opt, nil
+	}
+	if len(words) == 0 {
 		return options{}, reject("invalid_command", 2)
 	}
+	command, topic, ok := resolveWords(words)
+	if !ok {
+		return options{}, reject("invalid_command", 2)
+	}
+	opt.command = command
+	if command == "help" {
+		opt.showHelp = true
+		opt.topic = topic
+		return opt, nil
+	}
+	if opt.showHelp {
+		opt.topic = helpTopicFor(command)
+	}
 	return opt, nil
+}
+
+func applyGlobal(opt *options, name, val string) *rejection {
+	switch name {
+	case "--dir":
+		opt.dir = val
+	case "--format":
+		if val != "json" && val != "text" {
+			return reject("invalid_flag", 2)
+		}
+		opt.format = val
+	case "--embed-provider":
+		switch val {
+		case "ollama", "openai", "fixture":
+			opt.provider = val
+		default:
+			return reject("invalid_flag", 2)
+		}
+	case "--embed-model":
+		opt.model = val
+	case "--embed-base-url":
+		opt.baseURL = val
+	case "--embed-api-key-env":
+		opt.keyEnv = val
+	case "--embed-fixture":
+		opt.fixture = val
+	default:
+		return reject("invalid_flag", 2)
+	}
+	return nil
+}
+
+func resolveWords(words []string) (string, string, bool) {
+	joined := strings.Join(words, " ")
+	switch joined {
+	case "init", "observe", "search", "schema", "believe", "relate", "domain-attach", "reindex":
+		return joined, "", true
+	case "belief add":
+		return "believe", "", true
+	case "relation add":
+		return "relate", "", true
+	case "domain attach":
+		return "domain-attach", "", true
+	case "embed reindex":
+		return "reindex", "", true
+	case "help":
+		return "help", "", true
+	}
+	if words[0] == "help" {
+		return "help", strings.Join(words[1:], " "), true
+	}
+	switch words[0] {
+	case "belief", "relation", "domain", "embed":
+		if len(words) == 1 {
+			return "help", words[0], true
+		}
+	}
+	return "", "", false
+}
+
+func isTerminal(r io.Reader) bool {
+	file, ok := r.(*os.File)
+	if !ok {
+		return false
+	}
+	info, err := file.Stat()
+	if err != nil {
+		return false
+	}
+	return info.Mode()&os.ModeCharDevice != 0
 }
 
 func readObject(stdin io.Reader) (map[string]json.RawMessage, *rejection) {
