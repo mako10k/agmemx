@@ -29,7 +29,7 @@ func TestBashCompletionProtocol(t *testing.T) {
 		t.Fatalf("top mode %q", mode)
 	}
 	assertSame(t, candidates, []string{
-		"init", "observe", "belief", "relation", "search", "domain", "embed", "help", "schema",
+		"init", "observe", "belief", "relation", "search", "domain", "embed", "config", "help", "schema",
 		"relate", "domain-attach", "reindex",
 		"--dir", "--format", "--embed-provider", "--embed-model", "--embed-base-url", "--embed-api-key-env", "--embed-fixture",
 	})
@@ -76,7 +76,7 @@ func TestBashCompletionProtocol(t *testing.T) {
 	}
 	assertSame(t, candidates, []string{
 		"concepts", "usecases",
-		"init", "observe", "belief", "relation", "search", "domain", "embed", "help", "schema",
+		"init", "observe", "belief", "relation", "search", "domain", "embed", "config", "help", "schema",
 		"relate", "domain-attach", "reindex",
 	})
 

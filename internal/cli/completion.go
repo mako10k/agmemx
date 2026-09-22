@@ -130,6 +130,9 @@ func parentCandidates(command, sub, current string) []string {
 	if command == "belief" {
 		return append([]string{sub}, specFlags(specName(command))...)
 	}
+	if command == "config" {
+		return []string{"show", "set", "unset", "path"}
+	}
 	return []string{sub}
 }
 
@@ -157,6 +160,8 @@ func subcommandName(command string) (string, bool) {
 		return "attach", true
 	case "embed":
 		return "reindex", true
+	case "config":
+		return "show", true
 	default:
 		return "", false
 	}

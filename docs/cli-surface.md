@@ -47,7 +47,9 @@ agmemx [--dir PATH] [--format json|text] [--embed-provider NAME] [--embed-model 
 
 `observe --help` と `agmemx help observe` は同じ本文である。`belief --help` は `belief add` を示す。ヘルプはストアを開かず、埋め込みプロバイダを呼ばない。
 
-フィールドはフラグで渡せる。フィールドフラグが無く、標準入力がパイプのときは、現行どおり JSON オブジェクトを一つ読む。フラグと JSON を同時に渡したときは `invalid_flag` で、どちらも実行しない。
+フィールドはフラグで渡せる。`search` の検索語は引数であり、標準入力は読まない。その他のコマンドは、フィールドフラグが無く標準入力がパイプのとき、JSON オブジェクトを一つ読む。フラグと JSON を同時に渡したときは `invalid_flag` で、どちらも実行しない。
+
+埋め込みの指定が無いときはプロバイダ `ollama`、モデル `nomic-embed-text` である。`agmemx config set` で `${XDG_CONFIG_HOME:-$HOME/.config}/agmemx/config.json` に保存でき、フラグはそれより優先する。
 
 次の綴りは互換として残す。ヘルプでは新しい綴りを先に出す。
 

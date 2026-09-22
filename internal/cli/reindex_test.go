@@ -222,8 +222,8 @@ func TestReindexRejectsUnknownFieldAndEmptySubtree(t *testing.T) {
 	out, errOut, code = run(t, append(lay.hostedArgs(lay.root, "ollama", "nomic", url, ""), "reindex"), []byte(`{}`), lay.env, lay.root)
 	assertReindex(t, out, errOut, code, "ollama", "nomic", 0)
 
-	out, errOut, code = run(t, []string{"--dir", lay.root, "--embed-provider", "ollama", "reindex"}, []byte(`{}`), lay.env, lay.root)
-	assertReject(t, out, errOut, code, 1, "embed_provider_unset")
+	out, errOut, code = run(t, []string{"--dir", lay.root, "reindex"}, []byte(`{}`), lay.env, lay.root)
+	assertReindex(t, out, errOut, code, "ollama", "nomic-embed-text", 0)
 }
 
 func TestHostedObserveRejectsWithoutWriting(t *testing.T) {

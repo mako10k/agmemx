@@ -302,8 +302,8 @@ func TestTextModeSuccess(t *testing.T) {
 		t.Fatalf("text relate %d %q %q", textCode, textOut, textErr)
 	}
 
-	searchArgs := append(append([]string{}, base...), "search")
-	jsonOut, jsonErr, jsonCode = runText(t, searchArgs, `{"query":"seen one"}`, env, dir)
+	searchArgs := append(append([]string{}, base...), "search", "--query", "seen one")
+	jsonOut, jsonErr, jsonCode = runText(t, searchArgs, ``, env, dir)
 	if jsonCode != 0 || jsonErr != "" {
 		t.Fatalf("json search %d %s %s", jsonCode, jsonOut, jsonErr)
 	}
@@ -311,7 +311,7 @@ func TestTextModeSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	textOut, textErr, textCode = runText(t, append(append([]string{"--format", "text"}, base...), "search"), `{"query":"seen one"}`, env, dir)
+	textOut, textErr, textCode = runText(t, append(append([]string{"--format", "text"}, base...), "search", "--query", "seen one"), ``, env, dir)
 	if textCode != 0 || textErr != "" || textOut != wantLines {
 		t.Fatalf("text search %d %q %q want %q", textCode, textOut, textErr, wantLines)
 	}

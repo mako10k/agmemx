@@ -272,7 +272,7 @@ type placedBody struct {
 
 func placedSearch(t *testing.T, args []string, env []string, cwd string) placedBody {
 	t.Helper()
-	out, errOut, code := run(t, append(append([]string{}, args...), "search"), []byte(`{"query":"矛盾を探す"}`), env, cwd)
+	out, errOut, code := run(t, append(append([]string{}, args...), "search", "--query", "矛盾を探す"), nil, env, cwd)
 	if code != 0 || errOut != "" {
 		t.Fatalf("search %d %s %s", code, out, errOut)
 	}

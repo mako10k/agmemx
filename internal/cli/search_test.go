@@ -50,7 +50,7 @@ func TestSearchSliceUsesEmbeddingCache(t *testing.T) {
 	}
 	create(t, []string{"--dir", sibling, "--embed-provider", "fixture", "--embed-model", "fixture-model", "--embed-fixture", fixture}, env, root, "believe", `{"text":"兄弟"}`)
 
-	out, errOut, code := run(t, append(append([]string{}, args...), "search"), []byte(`{"query":"探す"}`), env, root)
+	out, errOut, code := run(t, append(append([]string{}, args...), "search", "--query", "探す"), nil, env, root)
 	if code != 0 || errOut != "" {
 		t.Fatalf("search %d %s %s", code, out, errOut)
 	}
@@ -95,22 +95,22 @@ func TestSearchSliceUsesEmbeddingCache(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		in   string
+		args []string
 		exit int
 		code string
 	}{
-		{`{"query":"探す","limit":0}`, 1, "limit_invalid"},
-		{`{"query":"探す","limit":21}`, 1, "limit_invalid"},
-		{`{"query":"探す","limit":1.5}`, 2, "invalid_type"},
+		{[]string{"--query", "探す", "--limit", "0"}, 1, "limit_invalid"},
+		{[]string{"--query", "探す", "--limit", "21"}, 1, "limit_invalid"},
+		{[]string{"--query", "探す", "--limit", "1.5"}, 2, "invalid_type"},
 	} {
-		out, errOut, code = run(t, append(append([]string{}, args...), "search"), []byte(tc.in), env, root)
+		out, errOut, code = run(t, append(append(append([]string{}, args...), "search"), tc.args...), nil, env, root)
 		assertCode(t, out, errOut, code, tc.exit, tc.code)
 	}
 
 	if err := embed.Delete(cache, embed.Key{Provider: "fixture", Model: "fixture-model", Text: itemText(0)}); err != nil {
 		t.Fatal(err)
 	}
-	out, errOut, code = run(t, append(append([]string{}, args...), "search"), []byte(`{"query":"探す","limit":3}`), env, root)
+	out, errOut, code = run(t, append(append([]string{}, args...), "search", "--query", "探す", "--limit", "3"), nil, env, root)
 	assertCode(t, out, errOut, code, 1, "embed_cache_missing")
 }
 

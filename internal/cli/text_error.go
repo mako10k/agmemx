@@ -69,7 +69,7 @@ var errorGuides = map[string]guide{
 	"object_not_found":             {hint: "対象は解決ディレクトリの部分木にある ID にする。", topic: "domain attach"},
 	"limit_invalid":                {hint: "検索上限は 1 以上 20 以下にする。", topic: "search"},
 	"domain_invalid":               {hint: "付け替え先はルート以外の、存在する絶対パスのディレクトリにする。", topic: "domain attach"},
-	"embed_provider_unset":         {hint: "--embed-provider と --embed-model を指定する。fixture には --embed-fixture も要る。", topic: "embed reindex"},
+	"embed_provider_unset":         {hint: "既定は ollama と nomic-embed-text である。fixture には --embed-fixture と --embed-model も要る。", topic: "config"},
 	"embed_unreachable":            {hint: "埋め込みプロバイダへは接続しない。到達できる設定を案内で確認する。", topic: "search"},
 	"embed_rejected":               {hint: "プロバイダはここでは呼ばない。ベクトルを含む応答かを案内で確認する。", topic: "search"},
 	"embed_dimension_mismatch":     {hint: "次元の違う索引はここでは作り直さない。embed reindex の案内を読む。", topic: "embed reindex"},
@@ -85,6 +85,7 @@ var operationalTopics = map[string]struct{}{
 	"search":        {},
 	"domain attach": {},
 	"embed reindex": {},
+	"config":        {},
 }
 
 func textReject(code, message, command, near string) string {

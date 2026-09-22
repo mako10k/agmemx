@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"testing"
 
 	"agmemx/internal/record"
@@ -179,7 +180,7 @@ func TestRecordRejectionsDoNotWrite(t *testing.T) {
 		{base, "observe", `{"text":"観測した","reference":{"source":"bad.txt","start":0,"end":1}}`, "reference_encoding", 1},
 		{base, "observe", `{"text":"観測した","reference":{"source":"a.txt","start":0,"end":9}}`, "reference_span_invalid", 1},
 		{base, "observe", `{"text":"観測した","reference":{"source":"a.txt","start":1.5,"end":2}}`, "invalid_type", 2},
-		{[]string{"--dir", root}, "observe", `{"text":"観測した","reference":{"source":"a.txt","start":0,"end":1}}`, "embed_provider_unset", 1},
+		{[]string{"--dir", root, "--embed-provider", "fixture"}, "observe", `{"text":"観測した","reference":{"source":"a.txt","start":0,"end":1}}`, "embed_provider_unset", 1},
 		{base, "observe", `{"text":"未登録","reference":{"source":"a.txt","start":0,"end":1}}`, "embed_fixture_invalid", 1},
 		{base, "believe", `{"text":"理由なし","reason":{"kind":"nope"}}`, "reason_kind_invalid", 1},
 	}
@@ -258,7 +259,21 @@ func create(t *testing.T, args []string, env []string, cwd, command, body string
 
 func search(t *testing.T, args []string, env []string, cwd, body string) searchBody {
 	t.Helper()
-	out, errOut, code := run(t, append(append([]string{}, args...), "search"), []byte(body), env, cwd)
+	var req struct {
+		Query string `json:"query"`
+		Limit *int   `json:"limit"`
+	}
+	if err := json.Unmarshal([]byte(body), &req); err != nil {
+		t.Fatal(err)
+	}
+	cmd := append(append([]string{}, args...), "search")
+	if req.Query != "" {
+		cmd = append(cmd, "--query", req.Query)
+	}
+	if req.Limit != nil {
+		cmd = append(cmd, "--limit", strconv.Itoa(*req.Limit))
+	}
+	out, errOut, code := run(t, cmd, nil, env, cwd)
 	if code != 0 {
 		t.Fatalf("search %s: %d %s %s", body, code, out, errOut)
 	}

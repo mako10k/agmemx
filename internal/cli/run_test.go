@@ -295,6 +295,7 @@ func contractMessage(code string) string {
 		"invalid_json":                 "入力は1つの JSON オブジェクトである",
 		"invalid_command":              "未知のコマンドである",
 		"invalid_flag":                 "未知のフラグがある",
+		"missing_field":                "必須フィールドがない",
 		"invalid_type":                 "フィールドの型が契約と違う",
 		"text_empty":                   "本文が空である",
 		"observation_reason_forbidden": "観測の理由は受け付けない",

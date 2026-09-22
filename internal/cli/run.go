@@ -41,7 +41,10 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer, environ []str
 		writeOK(stdout, schemaDocument())
 		return 0
 	}
-	if !opts.flagMode && isTerminal(stdin) {
+	if opts.command == "config" {
+		return handleConfig(stdout, stderr, opts, environ)
+	}
+	if !opts.flagMode && len(opts.positionals) == 0 && isTerminal(stdin) {
 		if text, ok := helpText(helpTopicFor(opts.command)); ok {
 			fmt.Fprint(stdout, text)
 			return 0
@@ -64,8 +67,18 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer, environ []str
 		writeReject(stdout, reject("dir_is_root", 1))
 		return 1
 	}
+	if needsEmbed(opts.command) {
+		cfg, rej := loadFileConfig(environ)
+		if rej != nil {
+			writeReject(stdout, rej)
+			return rej.exit
+		}
+		opts.applyEmbed(cfg)
+	}
 	var body map[string]json.RawMessage
-	if opts.flagMode {
+	if opts.command == "search" {
+		body, rej = searchArgsToBody(opts)
+	} else if opts.flagMode {
 		raw, err := io.ReadAll(stdin)
 		if err != nil {
 			writeReject(stdout, reject("invalid_json", 2))
@@ -194,20 +207,21 @@ func writeOK(stdout io.Writer, v any) {
 }
 
 type options struct {
-	dir      string
-	provider string
-	model    string
-	baseURL  string
-	keyEnv   string
-	fixture  string
-	format   string
-	attempt  string
-	command  string
-	showHelp bool
-	topic    string
-	flagMode bool
-	fields   map[string][]string
-	seen     map[string]bool
+	dir         string
+	provider    string
+	model       string
+	baseURL     string
+	keyEnv      string
+	fixture     string
+	format      string
+	attempt     string
+	command     string
+	showHelp    bool
+	topic       string
+	flagMode    bool
+	fields      map[string][]string
+	positionals []string
+	seen        map[string]bool
 }
 
 func parseArgs(args []string) (options, *rejection) {
@@ -250,7 +264,7 @@ func parseArgs(args []string) (options, *rejection) {
 			opt.flagMode = true
 			continue
 		}
-		if opt.flagMode {
+		if opt.flagMode && (len(words) == 0 || (words[0] != "search" && words[0] != "config")) {
 			opt.attempt = strings.Join(append(append([]string{}, words...), arg), " ")
 			return aborted(opt, words, reject("invalid_command", 2))
 		}
@@ -263,12 +277,17 @@ func parseArgs(args []string) (options, *rejection) {
 	if len(words) == 0 {
 		return aborted(opt, words, reject("invalid_command", 2))
 	}
-	command, topic, ok := resolveWords(words)
+	command, topic, rest, ok := splitCommand(words)
 	if !ok {
 		opt.attempt = strings.Join(words, " ")
 		return aborted(opt, words, reject("invalid_command", 2))
 	}
+	if len(rest) > 0 && command != "search" && command != "config" {
+		opt.attempt = strings.Join(words, " ")
+		return aborted(opt, words, reject("invalid_command", 2))
+	}
 	opt.command = command
+	opt.positionals = rest
 	if command == "help" {
 		opt.showHelp = true
 		opt.topic = topic
@@ -324,31 +343,68 @@ func applyGlobal(opt *options, name, val string) *rejection {
 }
 
 func resolveWords(words []string) (string, string, bool) {
-	joined := strings.Join(words, " ")
-	switch joined {
-	case "init", "observe", "search", "schema", "believe", "relate", "domain-attach", "reindex":
-		return joined, "", true
-	case "belief add":
-		return "believe", "", true
-	case "relation add":
-		return "relate", "", true
-	case "domain attach":
-		return "domain-attach", "", true
-	case "embed reindex":
-		return "reindex", "", true
-	case "help":
-		return "help", "", true
+	command, topic, _, ok := splitCommand(words)
+	return command, topic, ok
+}
+
+func splitCommand(words []string) (string, string, []string, bool) {
+	if len(words) == 0 {
+		return "", "", nil, false
 	}
 	if words[0] == "help" {
-		return "help", strings.Join(words[1:], " "), true
+		return "help", strings.Join(words[1:], " "), nil, true
 	}
-	switch words[0] {
-	case "belief", "relation", "domain", "embed":
-		if len(words) == 1 {
-			return "help", words[0], true
+	if words[0] == "config" {
+		return "config", "", words[1:], true
+	}
+	if words[0] == "search" {
+		return "search", "", words[1:], true
+	}
+	if len(words) >= 2 {
+		switch words[0] + " " + words[1] {
+		case "belief add":
+			return "believe", "", words[2:], true
+		case "relation add":
+			return "relate", "", words[2:], true
+		case "domain attach":
+			return "domain-attach", "", words[2:], true
+		case "embed reindex":
+			return "reindex", "", words[2:], true
 		}
 	}
-	return "", "", false
+	switch words[0] {
+	case "init", "observe", "schema", "believe", "relate", "domain-attach", "reindex":
+		if len(words) == 1 {
+			return words[0], "", nil, true
+		}
+	case "belief", "relation", "domain", "embed":
+		if len(words) == 1 {
+			return "help", words[0], nil, true
+		}
+	}
+	return "", "", nil, false
+}
+
+func searchArgsToBody(opts options) (map[string]json.RawMessage, *rejection) {
+	query := strings.Join(opts.positionals, " ")
+	if flagged, ok := opts.fields["--query"]; ok {
+		if query != "" {
+			return nil, reject("invalid_flag", 2)
+		}
+		query = flagged[0]
+	}
+	if query == "" {
+		return nil, reject("missing_field", 2)
+	}
+	payload := map[string]any{"query": query}
+	if limits := opts.fields["--limit"]; len(limits) > 0 {
+		number, rej := flagInt(limits[0])
+		if rej != nil {
+			return nil, rej
+		}
+		payload["limit"] = number
+	}
+	return marshalFields(payload)
 }
 
 func isTerminal(r io.Reader) bool {

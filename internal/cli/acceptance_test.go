@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -239,7 +240,18 @@ type acceptanceSearch struct {
 
 func searchCLI(t *testing.T, bin, dir string, env, args []string, stdin string) acceptanceSearch {
 	t.Helper()
-	code, stderr, stdout := callCLI(t, bin, dir, env, args, stdin)
+	var req struct {
+		Query string `json:"query"`
+		Limit *int   `json:"limit"`
+	}
+	if err := json.Unmarshal([]byte(stdin), &req); err != nil {
+		t.Fatal(err)
+	}
+	args = append(append([]string{}, args...), "--query", req.Query)
+	if req.Limit != nil {
+		args = append(args, "--limit", strconv.Itoa(*req.Limit))
+	}
+	code, stderr, stdout := callCLI(t, bin, dir, env, args, "")
 	if code != 0 || stderr != "" {
 		t.Fatalf("search: %d %s %s", code, stderr, stdout)
 	}

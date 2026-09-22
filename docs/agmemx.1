@@ -44,7 +44,10 @@ Create one belief.
 Link the next utterance inside the same domain.
 .TP
 .B search
-Search the subtree with natural language.
+Search the subtree. The query is an argument. Stdin is not read.
+.TP
+.B config
+Show or save embedding defaults. With no flags the provider is ollama and the model is nomic-embed-text.
 .TP
 .B "domain attach"
 Replace the membership index.
