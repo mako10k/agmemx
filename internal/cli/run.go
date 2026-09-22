@@ -21,6 +21,9 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer, environ []str
 		return code
 	}
 	opts, rej := parseArgs(args)
+	if selectFormat(opts.format, stdoutIsTerminal(stdout)) == "text" {
+		stdout = &modeWriter{dst: stdout, stderr: stderr, command: opts.command, near: opts.attempt}
+	}
 	if rej != nil {
 		writeReject(stdout, rej)
 		return rej.exit
@@ -167,11 +170,25 @@ type errorDocument struct {
 }
 
 func writeReject(stdout io.Writer, rej *rejection) {
+	if tw, ok := stdout.(*modeWriter); ok {
+		_, _ = io.WriteString(tw.stderr, textReject(rej.code, rej.message, tw.command, tw.near))
+		return
+	}
 	writeOK(stdout, errorDocument{Error: errorBody{Code: rej.code, Message: rej.message}})
 }
 
 func writeOK(stdout io.Writer, v any) {
-	enc := json.NewEncoder(stdout)
+	dst := stdout
+	if tw, ok := stdout.(*modeWriter); ok {
+		if rendered, ok := formatTextSuccess(v); ok {
+			if rendered != "" {
+				_, _ = io.WriteString(tw.dst, rendered)
+			}
+			return
+		}
+		dst = tw.dst
+	}
+	enc := json.NewEncoder(dst)
 	enc.SetEscapeHTML(false)
 	_ = enc.Encode(v)
 }
@@ -184,6 +201,7 @@ type options struct {
 	keyEnv   string
 	fixture  string
 	format   string
+	attempt  string
 	command  string
 	showHelp bool
 	topic    string
@@ -205,27 +223,27 @@ func parseArgs(args []string) (options, *rejection) {
 			name, val, inline := strings.Cut(arg, "=")
 			if !inline {
 				if i+1 >= len(args) || strings.HasPrefix(args[i+1], "--") {
-					return options{}, reject("invalid_flag", 2)
+					return aborted(opt, words, reject("invalid_flag", 2))
 				}
 				i++
 				val = args[i]
 			}
 			if val == "" {
-				return options{}, reject("invalid_flag", 2)
+				return aborted(opt, words, reject("invalid_flag", 2))
 			}
 			if len(words) == 0 {
 				if opt.seen[name] {
-					return options{}, reject("invalid_flag", 2)
+					return aborted(opt, words, reject("invalid_flag", 2))
 				}
 				opt.seen[name] = true
 				if rej := applyGlobal(&opt, name, val); rej != nil {
-					return options{}, rej
+					return aborted(opt, words, rej)
 				}
 				continue
 			}
 			if name != "--about" {
 				if _, exists := opt.fields[name]; exists {
-					return options{}, reject("invalid_flag", 2)
+					return aborted(opt, words, reject("invalid_flag", 2))
 				}
 			}
 			opt.fields[name] = append(opt.fields[name], val)
@@ -233,7 +251,8 @@ func parseArgs(args []string) (options, *rejection) {
 			continue
 		}
 		if opt.flagMode {
-			return options{}, reject("invalid_command", 2)
+			opt.attempt = strings.Join(append(append([]string{}, words...), arg), " ")
+			return aborted(opt, words, reject("invalid_command", 2))
 		}
 		words = append(words, arg)
 	}
@@ -242,11 +261,12 @@ func parseArgs(args []string) (options, *rejection) {
 		return opt, nil
 	}
 	if len(words) == 0 {
-		return options{}, reject("invalid_command", 2)
+		return aborted(opt, words, reject("invalid_command", 2))
 	}
 	command, topic, ok := resolveWords(words)
 	if !ok {
-		return options{}, reject("invalid_command", 2)
+		opt.attempt = strings.Join(words, " ")
+		return aborted(opt, words, reject("invalid_command", 2))
 	}
 	opt.command = command
 	if command == "help" {
@@ -258,6 +278,19 @@ func parseArgs(args []string) (options, *rejection) {
 		opt.topic = helpTopicFor(command)
 	}
 	return opt, nil
+}
+
+// aborted keeps flags already parsed, including --format, when a rejection stops parsing.
+func aborted(opt options, words []string, rej *rejection) (options, *rejection) {
+	if opt.command == "" && len(words) > 0 {
+		if command, _, ok := resolveWords(words); ok {
+			opt.command = command
+		}
+	}
+	if rej != nil && rej.code == "invalid_command" && opt.attempt == "" {
+		opt.attempt = strings.Join(words, " ")
+	}
+	return opt, rej
 }
 
 func applyGlobal(opt *options, name, val string) *rejection {
@@ -319,7 +352,15 @@ func resolveWords(words []string) (string, string, bool) {
 }
 
 func isTerminal(r io.Reader) bool {
-	file, ok := r.(*os.File)
+	return isCharDevice(r)
+}
+
+func stdoutIsTerminal(w io.Writer) bool {
+	return isCharDevice(w)
+}
+
+func isCharDevice(v any) bool {
+	file, ok := v.(*os.File)
 	if !ok {
 		return false
 	}
