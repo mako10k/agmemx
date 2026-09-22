@@ -13,7 +13,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"agmemx/internal/domain"
 	"agmemx/internal/embed"
 	"agmemx/internal/record"
 	"agmemx/internal/search"
@@ -103,6 +102,11 @@ func handleSearch(stdout, stderr io.Writer, roots xdg.Roots, opts options, resol
 		fmtErr(stderr, err)
 		return 2
 	}
+	members, err := store.SubtreeMembership(roots.Data, resolved)
+	if err != nil {
+		fmtErr(stderr, err)
+		return 2
+	}
 	type loaded struct {
 		obj   record.Object
 		score float64
@@ -113,6 +117,9 @@ func handleSearch(stdout, stderr io.Writer, roots xdg.Roots, opts options, resol
 		if err != nil {
 			fmtErr(stderr, err)
 			return 2
+		}
+		if dom, ok := members[id]; ok {
+			obj.Domain = dom
 		}
 		vec, ok, err := embed.Get(roots.Cache, cacheKey(opts, obj.Text))
 		if err != nil {
@@ -433,9 +440,18 @@ func parseAbout(dataHome, resolved string, body map[string]json.RawMessage) ([]s
 
 func objectInSubtree(dataHome, resolved, id string) (record.Object, *rejection) {
 	obj, err := loadObject(dataHome, id)
-	if err != nil || !domain.InSubtree(resolved, obj.Domain) {
+	if err != nil {
 		return record.Object{}, reject("reason_not_found", 1)
 	}
+	members, err := store.SubtreeMembership(dataHome, resolved)
+	if err != nil {
+		return record.Object{}, reject("reason_not_found", 1)
+	}
+	dom, ok := members[id]
+	if !ok {
+		return record.Object{}, reject("reason_not_found", 1)
+	}
+	obj.Domain = dom
 	return obj, nil
 }
 

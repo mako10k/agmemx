@@ -146,24 +146,14 @@ func Exists(dataHome, id string) bool {
 	return err == nil
 }
 
-// IDsInSubtree returns object ids whose domain is root or inside root.
+// IDsInSubtree returns object ids whose domain index is root or inside root.
 func IDsInSubtree(dataHome, root string) ([]string, error) {
-	entries, err := os.ReadDir(LayoutOf(dataHome).Domains)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil, nil
-	}
+	indexes, err := readIndexes(dataHome)
 	if err != nil {
 		return nil, err
 	}
 	var ids []string
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		current, err := readIndex(filepath.Join(LayoutOf(dataHome).Domains, entry.Name()))
-		if err != nil {
-			return nil, err
-		}
+	for _, current := range indexes {
 		if domain.InSubtree(root, current.Domain) {
 			ids = append(ids, current.IDs...)
 		}
