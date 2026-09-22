@@ -307,6 +307,8 @@ func contractMessage(code string) string {
 		"embed_provider_unset":         "埋め込みプロバイダまたはモデルが未設定である",
 		"embed_fixture_invalid":        "フィクスチャのベクトル定義が契約と違う",
 		"embed_dimension_mismatch":     "埋め込みの次元が索引と一致しない",
+		"embed_cache_missing":          "検索対象の埋め込みキャッシュが欠けている",
+		"limit_invalid":                "検索上限が 1 以上 20 以下ではない",
 	}[code]
 }
 

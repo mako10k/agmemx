@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -562,25 +563,39 @@ func reasonJSON(reason *record.Reason) any {
 	return out
 }
 
+// scoreJSON is a decimal with at most six digits after the point.
+type scoreJSON float64
+
+func (s scoreJSON) MarshalJSON() ([]byte, error) {
+	rounded := search.Round6(float64(s))
+	text := strconv.FormatFloat(rounded, 'f', 6, 64)
+	text = strings.TrimRight(text, "0")
+	text = strings.TrimRight(text, ".")
+	if text == "" || text == "-0" {
+		text = "0"
+	}
+	return []byte(text), nil
+}
+
 type observationViewBody struct {
-	Domain    string  `json:"domain"`
-	ID        string  `json:"id"`
-	Interval  any     `json:"interval"`
-	Kind      string  `json:"kind"`
-	Reference any     `json:"reference"`
-	Score     float64 `json:"score"`
-	Text      string  `json:"text"`
+	Domain    string    `json:"domain"`
+	ID        string    `json:"id"`
+	Interval  any       `json:"interval"`
+	Kind      string    `json:"kind"`
+	Reference any       `json:"reference"`
+	Score     scoreJSON `json:"score"`
+	Text      string    `json:"text"`
 }
 
 type beliefViewBody struct {
-	About    []string `json:"about"`
-	Domain   string   `json:"domain"`
-	ID       string   `json:"id"`
-	Interval any      `json:"interval"`
-	Kind     string   `json:"kind"`
-	Reason   any      `json:"reason"`
-	Score    float64  `json:"score"`
-	Text     string   `json:"text"`
+	About    []string  `json:"about"`
+	Domain   string    `json:"domain"`
+	ID       string    `json:"id"`
+	Interval any       `json:"interval"`
+	Kind     string    `json:"kind"`
+	Reason   any       `json:"reason"`
+	Score    scoreJSON `json:"score"`
+	Text     string    `json:"text"`
 }
 
 func observationView(obj record.Object, score float64) observationViewBody {
@@ -590,7 +605,7 @@ func observationView(obj record.Object, score float64) observationViewBody {
 		Interval:  intervalJSON(obj.Interval),
 		Kind:      obj.Kind,
 		Reference: map[string]any{"source": obj.Reference.Source, "start": obj.Reference.Start, "end": obj.Reference.End},
-		Score:     score,
+		Score:     scoreJSON(score),
 		Text:      obj.Text,
 	}
 }
@@ -607,7 +622,7 @@ func beliefView(obj record.Object, score float64) beliefViewBody {
 		Interval: intervalJSON(obj.Interval),
 		Kind:     obj.Kind,
 		Reason:   reasonJSON(obj.Reason),
-		Score:    score,
+		Score:    scoreJSON(score),
 		Text:     obj.Text,
 	}
 }
