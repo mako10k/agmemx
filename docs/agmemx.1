@@ -1,0 +1,119 @@
+.TH AGMEMX 1 "2026-09-22" "agmemx" "User Commands"
+.nh
+.SH NAME
+agmemx \- beliefs and observations for a resolved directory
+.SH SYNOPSIS
+.B agmemx
+[\fB--dir\fR \fIPATH\fR]
+[\fB--format\fR \fIjson|text\fR]
+[\fB--embed-provider\fR \fINAME\fR]
+[\fB--embed-model\fR \fINAME\fR]
+[\fB--embed-base-url\fR \fIURL\fR]
+[\fB--embed-api-key-env\fR \fINAME\fR]
+[\fB--embed-fixture\fR \fIPATH\fR]
+.I command
+[\fIsubcommand\fR]
+[\fIflags\fR]
+.SH DESCRIPTION
+.B agmemx
+records beliefs and observations under the domain of a resolved directory.
+The normative text is
+.BR "agmemx help" .
+This manual lists the same commands and does not change their meaning.
+.PP
+Global options come before the command.
+When
+.B --format
+is omitted, stdout that is not a terminal is json, and a terminal is text.
+.PP
+Hints do not run repairs.
+A hint only names the next command to read.
+It does not register, delete, reindex, or call an embedding provider.
+.SH COMMANDS
+.TP
+.B init
+Create the domain for the resolved directory.
+.TP
+.B observe
+Create one observation.
+.TP
+.B "belief add"
+Create one belief.
+.TP
+.B "relation add"
+Link the next utterance inside the same domain.
+.TP
+.B search
+Search the subtree with natural language.
+.TP
+.B "domain attach"
+Replace the membership index.
+.TP
+.B "embed reindex"
+Rebuild the cache for the current provider and model.
+.TP
+.B help
+Show the catalog, a command,
+.IR concepts ,
+or
+.IR usecases .
+.B "agmemx help"
+with no topic prints the catalog.
+.TP
+.B schema
+Show the shape of the machine-readable JSON.
+.SH OPTIONS
+.TP
+.B --dir \fIPATH\fR
+Resolved directory.
+When omitted, the process working directory at startup is used.
+.TP
+.B --format \fIjson|text\fR
+Output format.
+json writes one JSON object to stdout.
+text writes a short human summary, and rejections go to stderr.
+.TP
+.B --embed-provider \fINAME\fR
+Embedding provider:
+.IR ollama ,
+.IR openai ,
+or
+.IR fixture .
+.TP
+.B --embed-model \fINAME\fR
+Model name.
+Required for every provider.
+.TP
+.B --embed-base-url \fIURL\fR
+Provider base URL.
+The default for ollama is http://127.0.0.1:11434.
+The default for openai is https://api.openai.com/v1.
+.TP
+.B --embed-api-key-env \fINAME\fR
+Environment variable that holds the API key.
+The openai default is
+.BR OPENAI_API_KEY .
+Unused by ollama and fixture.
+.TP
+.B --embed-fixture \fIPATH\fR
+Fixture vector file.
+Required when the provider is fixture.
+.SH EXIT STATUS
+.TP
+.B 0
+success
+.TP
+.B 1
+domain rejection
+.TP
+.B 2
+usage rejection
+.PP
+Exit 0 is success.
+Exit 1 is a domain rejection.
+Exit 2 is a usage rejection, including an unknown command, flag, or JSON shape.
+Help does not open the store or call an embedding provider.
+.SH SEE ALSO
+The normative text is
+.BR "agmemx help" .
+Hints do not run repairs.
