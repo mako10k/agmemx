@@ -17,6 +17,9 @@ import (
 
 // Run executes one invocation. cwd is the process directory captured at startup.
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer, environ []string, cwd string) int {
+	if handled, code := tryCompletion(args, stdout); handled {
+		return code
+	}
 	opts, rej := parseArgs(args)
 	if rej != nil {
 		writeReject(stdout, rej)
