@@ -15,22 +15,27 @@ milestone START:
 milestone HELP:
   title "help と --help が同じレジストリを表示する"
   description "目録、コマンド、concepts、usecases を含む。ヘルプはストアも埋め込みプロバイダも開かない。"
+  state reached
 
 milestone ERRORS:
   title "text の案内が出て JSON 契約は維持される"
   description "error、hint、help を標準エラーに書く。hint はコマンドを実行しない。json モードの拒否形は現行契約のままである。"
+  state reached
 
 milestone COMPLETE:
   title "Bash 補完がレジストリから出る"
   description "薄いラッパーと __completion --bash。モードは plain、file、dir、none。記憶オブジェクトと鍵は候補にしない。"
+  state reached
 
 milestone MANUAL:
   title "man と install がヘルプと同じコマンドを置く"
   description "docs/agmemx.1 と、bin、bash-completion、man1 への make install である。"
+  state reached
 
 milestone CLI_SURFACE_READY:
   title "受入セッションと表面のテストが通る"
   description "受入セッションは --format json で現行の 11 手順を通る。help、text エラー、補完のテストも通る。"
+  state reached
 
 task IMPLEMENT_HELP START -> HELP:
   title "サブコマンドのヘルプを実装する"
