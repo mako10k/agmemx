@@ -1,0 +1,10 @@
+# Local runtime state; keep config, objects and REF manifests tracked.
+/index/
+/local/
+/cache/
+/locks/
+/logs/
+
+# Temporary files used for atomic canonical writes.
+/objects/*/.tmp-object-*
+/refs/seals/**/.tmp-ref-*
