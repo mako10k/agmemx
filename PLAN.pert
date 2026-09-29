@@ -24,6 +24,7 @@ milestone CONTRACT_READY:
 milestone MODEL_DONE:
   title "記憶モデル単独検証済み"
   description "modelの値と不変条件を単独で検証する。"
+  state reached
 
 milestone DOMAIN_DONE:
   title "ドメイン単独検証済み"
@@ -109,14 +110,6 @@ milestone PRODUCT_READY:
   title "Accepted記憶機能を利用・検証できる"
   description "実CLIとworkerでAccepted受入例が通り、現行文書と由来が整う。"
 
-task MODEL CONTRACT_READY -> MODEL_DONE:
-  title "model module"
-  description "記録・関係・理由・Referenceの型と意味上の不変条件を実装・単独検証する。"
-  estimate:
-    optimistic 2p
-    most_likely 3p
-    pessimistic 5p
-  status done
 
 task DOMAIN CONTRACT_READY -> DOMAIN_DONE:
   title "domain module"
@@ -479,18 +472,6 @@ milestone_acceptance_receipt RCPT_CONTRACT_DOCS:
   verifier codex
   occurred_at 2026-09-29T06:53:12Z
 
-work_event WE-bb18c500ee789005b7363fbcb9d1983407392e47192dc375a7f2327fbc0b4cab:
-  model 1
-  task MODEL
-  kind start
-  occurred_at 2026-09-29T19:14:59+09:00
-  planned_value 19/6p
-
-work_event WE-8d0d518472d71d0a20d3dad0010948bbecf347d23996c4f4669089d77cbc6a6a:
-  model 1
-  task MODEL
-  kind finish
-  occurred_at 2026-09-29T19:20:06+09:00
 
 milestone_acceptance_receipt RCPT_MODEL_TEST_20260929:
   model 1
