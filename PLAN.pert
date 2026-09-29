@@ -55,6 +55,7 @@ milestone LEDGER_DONE:
 milestone CANDIDATE_DONE:
   title "候補検索単独検証済み"
   description "埋め込み/全文の方式選択と候補順位を検証する。"
+  state reached
 
 milestone ASSOCIATION_DONE:
   title "連想表示単独検証済み"
@@ -72,6 +73,7 @@ milestone MEMBERSHIP_DONE:
 milestone SEARCH_READY:
   title "検索の下位契約が利用可能"
   description "candidateとassociationの公開契約がreadから利用できる。"
+  state reached
 
 milestone READ_DONE:
   title "読取操作単独検証済み"
@@ -185,14 +187,6 @@ task LEDGER CORE_READY -> LEDGER_DONE:
     pessimistic 8p
   status planned
 
-task CANDIDATE CORE_READY -> CANDIDATE_DONE:
-  title "candidate module"
-  description "埋め込み/全文の方式選択と候補順位を実装・単独検証する。"
-  estimate:
-    optimistic 3p
-    most_likely 5p
-    pessimistic 8p
-  status done
 
 
 task RECORD CORE_READY -> RECORD_DONE:
@@ -213,11 +207,7 @@ task MEMBERSHIP CORE_READY -> MEMBERSHIP_DONE:
     pessimistic 5p
   status planned
 
-gate SEARCH_CANDIDATE CANDIDATE_DONE -> SEARCH_READY:
-  reason "readはcandidateの公開APIを使う"
 
-gate SEARCH_ASSOCIATION ASSOCIATION_DONE -> SEARCH_READY:
-  reason "readはassociationの公開APIを使う"
 
 task READ SEARCH_READY -> READ_DONE:
   title "read module"
@@ -487,18 +477,6 @@ milestone_acceptance_receipt RCPT_ASSOCIATION_TEST_20260929:
   verifier codex
   occurred_at 2026-09-29T11:40:39Z
 
-work_event WE-808c3720201361181272146affe2ddd0c4345a1ccac21c2933ec8b7667899579:
-  model 1
-  task CANDIDATE
-  kind start
-  occurred_at 2026-09-29T20:49:52+09:00
-  planned_value 31/6p
-
-work_event WE-40d9d903a4dfbb71aed8aeb0b118747079fcbd81cc8c09c1bcb5a00946fca704:
-  model 1
-  task CANDIDATE
-  kind finish
-  occurred_at 2026-09-29T20:58:07+09:00
 
 milestone_acceptance_receipt RCPT_CANDIDATE_TEST_20260929:
   model 1
