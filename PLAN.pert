@@ -26,13 +26,11 @@ milestone MODEL_DONE:
   description "modelの値と不変条件を単独で検証する。"
   state reached
 
-milestone DOMAIN_DONE:
-  title "ドメイン単独検証済み"
-  description "domainのcanonical pathと部分木・移動対応を単独で検証する。"
 
 milestone CORE_READY:
   title "modelとdomainの公開契約が利用可能"
   description "両moduleの公開型・契約が依存側の実装に利用できる。"
+  state reached
 
 milestone BODY_DONE:
   title "本文保管単独検証済み"
@@ -111,14 +109,6 @@ milestone PRODUCT_READY:
   description "実CLIとworkerでAccepted受入例が通り、現行文書と由来が整う。"
 
 
-task DOMAIN CONTRACT_READY -> DOMAIN_DONE:
-  title "domain module"
-  description "canonical path、部分木、移動対応を実装・単独検証する。"
-  estimate:
-    optimistic 1p
-    most_likely 2p
-    pessimistic 4p
-  status done
 
 task CLI_SURFACE CONTRACT_READY -> CLI_SURFACE_DONE:
   title "CLI入出力の独立部分"
@@ -147,11 +137,7 @@ task SEAL_DESIGN CONTRACT_READY -> DESIGN_SEALED:
     pessimistic 4p
   status planned
 
-gate CORE_MODEL MODEL_DONE -> CORE_READY:
-  reason "依存moduleがmodelの公開型を使う"
 
-gate CORE_DOMAIN DOMAIN_DONE -> CORE_READY:
-  reason "依存moduleがdomainの公開型を使う"
 
 task BODY MODEL_DONE -> BODY_DONE:
   title "body module"
@@ -214,7 +200,7 @@ task ASSOCIATION CORE_READY -> ASSOCIATION_DONE:
     optimistic 3p
     most_likely 5p
     pessimistic 8p
-  status planned
+  status done
 
 task RECORD CORE_READY -> RECORD_DONE:
   title "record module"
@@ -326,12 +312,6 @@ milestone_criterion_set MODEL_DONE_CRITERIA:
   revision R1
   commitment sha256:9cd570fe035c2818173eaf273d9fbd1599f5711f996c10dfd25c6a237f819a6e
   criterion DONE required test "modelの値と不変条件を単独で検証する。"
-
-milestone_criterion_set DOMAIN_DONE_CRITERIA:
-  milestone DOMAIN_DONE
-  revision R1
-  commitment sha256:6317310a1bd7e43bfd0edcf55b0d7e8bc9a40e1b1215ad0ad3a0d34a73a239e4
-  criterion DONE required test "domainのcanonical pathと部分木・移動対応を単独で検証する。"
 
 milestone_criterion_set CORE_READY_CRITERIA:
   milestone CORE_READY
@@ -486,31 +466,6 @@ milestone_acceptance_receipt RCPT_MODEL_TEST_20260929:
   verifier codex
   occurred_at 2026-09-29T10:20:36Z
 
-work_event WE-2b37a4081a0d455489fca28fadb112718eedcc25019ddb1ed040a90e1480fe2f:
-  model 1
-  task DOMAIN
-  kind start
-  occurred_at 2026-09-29T20:09:14+09:00
-  planned_value 13/6p
-
-work_event WE-9529ea18bf7322b6e9e48db6eea4b65f7c7f9edbeb337eb6f0978d5dacbfdc20:
-  model 1
-  task DOMAIN
-  kind finish
-  occurred_at 2026-09-29T20:12:18+09:00
-
-milestone_acceptance_receipt RCPT_DOMAIN_TEST_20260929:
-  model 1
-  set DOMAIN_DONE_CRITERIA
-  set_commitment sha256:6317310a1bd7e43bfd0edcf55b0d7e8bc9a40e1b1215ad0ad3a0d34a73a239e4
-  criterion DONE
-  criterion_commitment sha256:87a1ef0a461ba1f1eaf795a29fb04c21c77b10ad82ce7f38bb025722b4d2f340
-  action verify
-  evidence_kind test
-  evidence_reference "modules/domain/domain.go#sha256=3db5517da49aa82b52e6daefbbd7ba56fc89e11c6e2de12eeef01c7250f0a1d2; modules/domain/domain_test.go#sha256=8b93fa8e701ca3032f3feff6a724634647c50e5ece44c72cb7af80f65075eb07; (cd modules/domain && go test ./... && go vet ./...); go list -deps shows only domain and standard packages"
-  evidence_revision none
-  verifier codex
-  occurred_at 2026-09-29T11:12:18Z
 
 milestone_acceptance_receipt RCPT_CORE_API_20260929:
   model 1
@@ -524,3 +479,29 @@ milestone_acceptance_receipt RCPT_CORE_API_20260929:
   evidence_revision none
   verifier codex
   occurred_at 2026-09-29T11:16:45Z
+
+work_event WE-a2221cdf16e0bf0a38b9ace8583b360ca4cec29bfea7c0c5c4ea5c928be1d706:
+  model 1
+  task ASSOCIATION
+  kind start
+  occurred_at 2026-09-29T20:25:13+09:00
+  planned_value 31/6p
+
+work_event WE-38f103225eddc2b77db71cb30cb4e30647196609d49cc1e8df2a4ed766124a06:
+  model 1
+  task ASSOCIATION
+  kind finish
+  occurred_at 2026-09-29T20:39:47+09:00
+
+milestone_acceptance_receipt RCPT_ASSOCIATION_TEST_20260929:
+  model 1
+  set ASSOCIATION_DONE_CRITERIA
+  set_commitment sha256:d7a4a8733919c1580531eadc18e2c47bdf1ad55faa44804c1f63b7a576b5d699
+  criterion DONE
+  criterion_commitment sha256:b544cc1c74b1888313e691920f97987be56328b6757aab8039433070ed939a6d
+  action verify
+  evidence_kind test
+  evidence_reference "modules/association/association.go#sha256=6eacb7ecd977d6729e415fa9988e22855bd57eea8a85a22c243db57cec899c1d; modules/association/budget.go#sha256=4c0711fa0367d68166a347edbfea3ca4558ec9b5affae2ee17e24bd346c3322d; modules/association/association_test.go#sha256=075be81959f88f0f280b5f88978feacf77a86687165a896d418af7e6566ff78b; GOWORK=/tmp/agmemx-association-work-kgTFnK/go.work GOPROXY=off go test ./... && go vet ./...; dependency list only model, domain, association, stdlib"
+  evidence_revision none
+  verifier codex
+  occurred_at 2026-09-29T11:40:39Z
