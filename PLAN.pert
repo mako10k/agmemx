@@ -59,6 +59,7 @@ milestone CANDIDATE_DONE:
 milestone ASSOCIATION_DONE:
   title "連想表示単独検証済み"
   description "入出リンク・統計・予算内表示を検証する。"
+  state reached
 
 milestone RECORD_DONE:
   title "記録変更単独検証済み"
@@ -191,16 +192,8 @@ task CANDIDATE CORE_READY -> CANDIDATE_DONE:
     optimistic 3p
     most_likely 5p
     pessimistic 8p
-  status planned
-
-task ASSOCIATION CORE_READY -> ASSOCIATION_DONE:
-  title "association module"
-  description "入出関係・統計・予算内表示を実装・単独検証する。"
-  estimate:
-    optimistic 3p
-    most_likely 5p
-    pessimistic 8p
   status done
+
 
 task RECORD CORE_READY -> RECORD_DONE:
   title "record module"
@@ -480,18 +473,6 @@ milestone_acceptance_receipt RCPT_CORE_API_20260929:
   verifier codex
   occurred_at 2026-09-29T11:16:45Z
 
-work_event WE-a2221cdf16e0bf0a38b9ace8583b360ca4cec29bfea7c0c5c4ea5c928be1d706:
-  model 1
-  task ASSOCIATION
-  kind start
-  occurred_at 2026-09-29T20:25:13+09:00
-  planned_value 31/6p
-
-work_event WE-38f103225eddc2b77db71cb30cb4e30647196609d49cc1e8df2a4ed766124a06:
-  model 1
-  task ASSOCIATION
-  kind finish
-  occurred_at 2026-09-29T20:39:47+09:00
 
 milestone_acceptance_receipt RCPT_ASSOCIATION_TEST_20260929:
   model 1
@@ -505,3 +486,42 @@ milestone_acceptance_receipt RCPT_ASSOCIATION_TEST_20260929:
   evidence_revision none
   verifier codex
   occurred_at 2026-09-29T11:40:39Z
+
+work_event WE-808c3720201361181272146affe2ddd0c4345a1ccac21c2933ec8b7667899579:
+  model 1
+  task CANDIDATE
+  kind start
+  occurred_at 2026-09-29T20:49:52+09:00
+  planned_value 31/6p
+
+work_event WE-40d9d903a4dfbb71aed8aeb0b118747079fcbd81cc8c09c1bcb5a00946fca704:
+  model 1
+  task CANDIDATE
+  kind finish
+  occurred_at 2026-09-29T20:58:07+09:00
+
+milestone_acceptance_receipt RCPT_CANDIDATE_TEST_20260929:
+  model 1
+  set CANDIDATE_DONE_CRITERIA
+  set_commitment sha256:a2a53667e7d760974df746d29b006407e2143afc7c79cfe4b4a29ec56ea4cd91
+  criterion DONE
+  criterion_commitment sha256:b480d310b3f63b45fb404d1b28bcd23a58e56987bc942ee2b394e41067fa50cd
+  action verify
+  evidence_kind test
+  evidence_reference "modules/candidate/candidate.go#sha256=f053a5915250896ebc80a5573360f9b1c279e39f5f08d15c7e71544ade80ad87; modules/candidate/lexemes.go#sha256=e8f11162804ff33fb2ff123d10cb6b6664a51fd35ff6a2ca2125104b594f107e; modules/candidate/candidate_test.go#sha256=da15d139c08ebffe2508821f090ace063b0ae6db2bb2b45f4b055093c8c6bae9; temp Go workspace: candidate go test ./... and go vet ./...; root go test ./...; dependency list only model, domain, candidate and external x/text"
+  evidence_revision none
+  verifier codex
+  occurred_at 2026-09-29T11:59:29Z
+
+milestone_acceptance_receipt RCPT_SEARCH_API_20260929:
+  model 1
+  set SEARCH_READY_CRITERIA
+  set_commitment sha256:5d71f3cacc6e35c52acba8482d0bc89b454b361aeca1cf420c115736bc4bc66e
+  criterion DONE
+  criterion_commitment sha256:6edf230eedb76548ba9f35ea9bab38b610714efd42b8487606c890d68cf14174
+  action verify
+  evidence_kind artifact
+  evidence_reference "modules/candidate/candidate.go#sha256=f053a5915250896ebc80a5573360f9b1c279e39f5f08d15c7e71544ade80ad87; modules/association/association.go#sha256=6eacb7ecd977d6729e415fa9988e22855bd57eea8a85a22c243db57cec899c1d; temporary external read-contract module contract_test.go#sha256=02b97ab007138fc3483a8b60ec97627a4a47a62425bd4a38e493d257f7f99ac7 compiles a candidate.Search result to association.Builder.Build bridge under GOWORK with GOPROXY=off go test ./..."
+  evidence_revision none
+  verifier codex
+  occurred_at 2026-09-29T11:59:29Z
