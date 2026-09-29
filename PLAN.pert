@@ -1,227 +1,480 @@
 # Existing .pert plans should normally be maintained through perttool commands; direct DSL editing bypasses goal/DAG owner-confirmation checks.
 project AGMEMX:
-  version 5
-  title "CLI から記憶を読み書きできる"
-  description "完了条件は、一時ディレクトリと一時の XDG_DATA_HOME だけで、公開スキーマどおりの CLI 列が通ることである。呼び出しは厳密な JSON に限り、応答は件数上限つきの構造化 JSON である。セッションでは、ファイルのスパンを Reference とする観測を登録できる。信念を観測の理由にした登録は安定した拒否コードで失敗し、オブジェクトを残さない。信念の理由は、無し、信念、観測、自然文を登録できる。二つの対象が矛盾しているという内容は、それらへリンクした信念として登録できる。同一ドメインの次発話を読み戻せる。別ドメイン間の次発話は拒否する。呼び出し側が与えた期間を同じ値で読み戻せる。自然文の検索は、解決ディレクトリを根とする部分木から、信念と観測を分けたスライスを返す。スライスは Reference の源と範囲を含み、源ファイル全体は含めない。キーワードが重ならない自然文でも、設定した埋め込みにより対応する信念または観測がスライスに入る。プロバイダは ollama、openai、または OpenAI 互換の base URL を明示して一つ選ぶ。受入セッションの結合は決定的なフィクスチャプロバイダで行い、実サーバへの接続は完了条件にしない。ollama と openai のリクエスト形は契約テストで固定する。子ディレクトリを解決した検索は親の記録を返さず、親からの検索は子を含む。ドメイン所属の付け替えは索引のみを変え、オブジェクトの bytes は増えない。--dir / と相対パスの XDG_DATA_HOME は拒否する。検索器の学習、会話ログからの自動抽出、期間が指す意味の確定は、この完了条件に含まない。"
-  as_of 2026-09-22
+  version 7
+  title "AIエージェントが少ない文脈負担で記憶を管理・検索できる"
+  description "上位目的: 利用者が信念・観測・関係を自然文で登録・訂正・履歴上の変化/終了・訂正削除し、必要な文脈を限られた出力予算で取得できる記憶基盤を得る。今回の有限なfinishはAccepted要件 docs/requirements-crud-associative-v7-acceptance.md の受入例1〜7を実CLIと別プロセスworkerで検証し、現行文書・由来を整えること。v7は要件文書の改訂番号であり製品目標名ではない。旧CLIの完了は新目標の前提でも達成証拠でもない。旧CLI/データ互換、物理GC、公開・配布は今回のfinishに含めず、GCは後続の要件・計画対象として残す。Pointはtaskの基本難易度の暫定入力で、工数・期間はperttoolが実績/velocityに基づいて解析する。"
+  as_of 2026-09-29
   duration_unit point
-  velocity 2p/1d
-  finish CLI_READY
+  finish PRODUCT_READY
 
-milestone START:
-  title "要件とアーキテクチャを seal 済み"
+
+
+
+
+
+
+
+
+
+milestone CONTRACT_READY:
+  title "Accepted製品契約が揃う"
+  description "v7要件・基本設計・詳細設計・CLI契約の受入記録が固定する版を根拠にする。旧CLI完了を条件にしない。"
   state reached
 
-milestone SCHEMA:
-  title "受入セッションの契約が文書化されている"
-  description "コマンド、JSON、安定した拒否コード、部分書き込み禁止を固定する。埋め込みプロバイダの選択と、接続失敗時の拒否を含む。期間の意味の確定はこの契約に含めない。"
-  state reached
+milestone MODEL_DONE:
+  title "記憶モデル単独検証済み"
+  description "modelの値と不変条件を単独で検証する。"
 
-milestone STORE:
-  title "一時 XDG 上で解決ディレクトリの空ドメインを作れる"
-  description "XDG_DATA_HOME の既定と相対パス拒否、--dir と起動時カレントの正規化、オブジェクトとドメイン索引の分離までを含む。"
-  state reached
+milestone DOMAIN_DONE:
+  title "ドメイン単独検証済み"
+  description "domainのcanonical pathと部分木・移動対応を単独で検証する。"
 
-milestone RECORD:
-  title "観測と信念の理由制約を CLI で読み戻せる"
-  description "Reference 付き観測、信念の四種の理由、信念を観測の理由にした場合の拒否、矛盾を表す信念リンクを含む。"
-  state reached
+milestone CORE_READY:
+  title "modelとdomainの公開契約が利用可能"
+  description "両moduleの公開型・契約が依存側の実装に利用できる。"
 
-milestone ORDER:
-  title "同一ドメインの順序と期間を読み戻せる"
-  description "次発話は同一ドメイン内だけを受け付ける。期間は呼び出し側が与えた値をそのまま返す。"
-  state reached
+milestone BODY_DONE:
+  title "本文保管単独検証済み"
+  description "内容アドレス保管と失敗境界を検証する。"
 
-milestone SCOPE:
-  title "部分木、--dir、所属の付け替えを読み戻せる"
-  description "子の解決では親を含めない。親の解決では子を含める。付け替えは索引のみを変え、オブジェクト bytes を複製しない。"
-  state reached
+milestone EMBED_DONE:
+  title "埋め込みworker単独検証済み"
+  description "別プロセスworkerの非同期処理・ベクトル成果を検証する。"
 
-milestone QUERY:
-  title "自然文検索が上限つきの構造化スライスを返す"
-  description "信念と観測を分けて返す。Reference は源と範囲にとどめ、源ファイル全体は返さない。順位は設定した埋め込みによる。"
-  state reached
+milestone RELATION_DONE:
+  title "関係変更単独検証済み"
+  description "関係の作成・訂正・訂正削除を検証する。"
 
-milestone CLI_READY:
-  title "受入セッション全体が外部依存なしで通る"
-  description "一時ディレクトリと一時の XDG_DATA_HOME だけで、契約どおりの CLI 列が通る。意味検索の結合はフィクスチャプロバイダで行い、実サーバへは接続しない。これが計画の完了条件である。"
-  state reached
+milestone REFERENCE_DONE:
+  title "Reference解決単独検証済み"
+  description "源・範囲・解決不能を検証する。"
 
-task LOCK_SCHEMA START -> SCHEMA:
-  title "受入セッションの契約を文書化する"
-  description "完了条件の各操作について、コマンド、フィールド、拒否コードを一文書に固定する。実装はこの契約を増やす思考を呼び出し側に戻さない。"
-  duration 2p
-  status done
+milestone LEDGER_DONE:
+  title "状態台帳単独検証済み"
+  description "読取像・原子的変更・競合を検証する。"
 
-task IMPLEMENT_STORE SCHEMA -> STORE:
-  title "XDG 配置とドメイン解決を実装する"
-  description "記憶本体を XDG_DATA_HOME 配下に置き、解決ディレクトリの正規化と空ドメインの作成をテストする。"
-  duration 3p
-  status done
+milestone CANDIDATE_DONE:
+  title "候補検索単独検証済み"
+  description "埋め込み/全文の方式選択と候補順位を検証する。"
 
-task IMPLEMENT_RECORDS STORE -> RECORD:
-  title "観測、信念、矛盾の表現を実装する"
-  description "Reference、信念の理由、観測の理由拒否、矛盾を表す信念リンクを CLI とテストで読み戻す。"
-  duration 4p
-  status done
+milestone ASSOCIATION_DONE:
+  title "連想表示単独検証済み"
+  description "入出リンク・統計・予算内表示を検証する。"
 
-task IMPLEMENT_ORDER RECORD -> ORDER:
-  title "同一ドメインの次発話と期間を実装する"
-  description "順序は同一ドメインに限り、期間は与えた値の保存と読み戻しに限る。"
-  duration 2p
-  status done
+milestone RECORD_DONE:
+  title "記録変更単独検証済み"
+  description "訂正・変化/終了・訂正削除を検証する。"
 
-task IMPLEMENT_SCOPE RECORD -> SCOPE:
-  title "部分木範囲と所属の付け替えを実装する"
-  description "--dir、親と子の検索範囲、索引だけの付け替えをテストする。"
-  duration 3p
-  status done
+milestone MEMBERSHIP_DONE:
+  title "所属変更単独検証済み"
+  description "所属付替えと部分木移動を検証する。"
 
-task IMPLEMENT_QUERY ORDER -> QUERY:
-  title "自然文検索の構造化スライスを実装する"
-  description "件数上限、信念と観測の分離、Reference の源と範囲だけを返す検索を実装する。順位は埋め込みキャッシュを使う。"
-  duration 3p
-  status done
+milestone SEARCH_READY:
+  title "検索の下位契約が利用可能"
+  description "candidateとassociationの公開契約がreadから利用できる。"
 
-gate SCOPE_BEFORE_QUERY SCOPE -> QUERY:
-  reason "検索範囲はドメイン部分木の実装に依存する"
+milestone READ_DONE:
+  title "読取操作単独検証済み"
+  description "ID取得・一覧・検索を検証する。"
 
-task ACCEPTANCE QUERY -> CLI_READY:
-  title "受入セッションをテストとして通す"
-  description "契約文書の CLI 列を、ネットワークも既存の記憶も使わないテストにする。追加したソースとテストは sealgraph の由来規則に従って登録する。"
-  duration 2p
-  status done
+milestone CLI_SURFACE_DONE:
+  title "CLI入出力の独立部分を検証済み"
+  description "引数/JSON、text/JSON、help・schema・補完・manを型付き境界で検証する。"
 
-milestone EMBED:
-  title "設定したプロバイダで埋め込み索引を作れる"
-  description "ollama と openai、および OpenAI 互換の base URL を明示して選べる。ベクトルはプロバイダとモデルごとにキャッシュし、失敗時はオブジェクトを残さない。"
-  state reached
+milestone MODULES_READY:
+  title "CLIの実接続に必要なmoduleが利用可能"
+  description "12の下位moduleの公開契約とCLI入出力の独立部分が揃う。"
 
-task IMPLEMENT_EMBED RECORD -> EMBED:
-  title "埋め込みプロバイダとキャッシュを実装する"
-  description "ollama の /api/embed と OpenAI の /v1/embeddings を実装する。契約テストは記録した応答を使い、受入の結合はフィクスチャプロバイダを使う。再索引は明示操作にする。"
-  duration 4p
-  status done
+milestone CLI_WIRED:
+  title "CLIとworkerの実構成を接続済み"
+  description "公開操作を実moduleと二つの実プロセスに接続する。"
 
-gate EMBED_BEFORE_QUERY EMBED -> QUERY:
-  reason "自然文検索の順位は埋め込み索引に依存する"
+milestone CAPABILITY_VERIFIED:
+  title "Accepted受入例を実能力で検証済み"
+  description "v7要件の受入例1〜7と詳細設計の結合検証を一時XDGで通す。"
 
-work_event LOCK_SCHEMA_START:
+milestone DOCS_DONE:
+  title "現行文書をAccepted契約に同期済み"
+  description "architecture.mdとCLI文書・利用者向け目録を受入契約に整合させる。"
+
+milestone DESIGN_SEALED:
+  title "Accepted設計の由来を登録済み"
+  description "受入済み設計・CLI契約と受入記録を正確な上流SealにCause登録する。"
+
+milestone SOURCE_SEALED:
+  title "新規ソース・テストの由来を登録済み"
+  description "維持対象のsource/test REFを正確な設計SealにCause登録する。"
+
+milestone PRODUCT_READY:
+  title "Accepted記憶機能を利用・検証できる"
+  description "実CLIとworkerでAccepted受入例が通り、現行文書と由来が整う。"
+
+task MODEL CONTRACT_READY -> MODEL_DONE:
+  title "model module"
+  description "記録・関係・理由・Referenceの型と意味上の不変条件を実装・単独検証する。"
+  estimate:
+    optimistic 2p
+    most_likely 3p
+    pessimistic 5p
+  status planned
+
+task DOMAIN CONTRACT_READY -> DOMAIN_DONE:
+  title "domain module"
+  description "canonical path、部分木、移動対応を実装・単独検証する。"
+  estimate:
+    optimistic 1p
+    most_likely 2p
+    pessimistic 4p
+  status planned
+
+task CLI_SURFACE CONTRACT_READY -> CLI_SURFACE_DONE:
+  title "CLI入出力の独立部分"
+  description "引数/JSON、text/JSON、操作目録、help・schema・補完・manを型付き境界で実装・検証する。実moduleの組立てはCLI_WIRINGへ分ける。"
+  estimate:
+    optimistic 3p
+    most_likely 5p
+    pessimistic 8p
+  status planned
+
+task DOCS_SYNC CONTRACT_READY -> DOCS_DONE:
+  title "現行文書をAccepted契約に同期"
+  description "architecture.md、cli-contract.md、cli-surface.md と利用者向け目録を受入版に合わせる。"
+  estimate:
+    optimistic 1p
+    most_likely 2p
+    pessimistic 4p
+  status planned
+
+task SEAL_DESIGN CONTRACT_READY -> DESIGN_SEALED:
+  title "Accepted設計のSealGraph由来を登録"
+  description "受入済み詳細設計・CLI契約と受入記録を正確な上流SealへCause登録する。"
+  estimate:
+    optimistic 1p
+    most_likely 2p
+    pessimistic 4p
+  status planned
+
+gate CORE_MODEL MODEL_DONE -> CORE_READY:
+  reason "依存moduleがmodelの公開型を使う"
+
+gate CORE_DOMAIN DOMAIN_DONE -> CORE_READY:
+  reason "依存moduleがdomainの公開型を使う"
+
+task BODY MODEL_DONE -> BODY_DONE:
+  title "body module"
+  description "本文バイトの内容アドレス保管を実装・単独検証する。"
+  estimate:
+    optimistic 2p
+    most_likely 3p
+    pessimistic 5p
+  status planned
+
+task EMBED MODEL_DONE -> EMBED_DONE:
+  title "embed moduleと別プロセスworker"
+  description "確定本文の非同期埋め込み・再試行・ベクトル成果を実装・単独検証する。"
+  estimate:
+    optimistic 3p
+    most_likely 5p
+    pessimistic 8p
+  status planned
+
+task RELATION MODEL_DONE -> RELATION_DONE:
+  title "relation module"
+  description "単独の関係作成・訂正・訂正削除を実装・単独検証する。"
+  estimate:
+    optimistic 2p
+    most_likely 3p
+    pessimistic 5p
+  status planned
+
+task REFERENCE CORE_READY -> REFERENCE_DONE:
+  title "reference module"
+  description "外部源のスパン解決・解決不能状態を実装・単独検証する。"
+  estimate:
+    optimistic 2p
+    most_likely 3p
+    pessimistic 5p
+  status planned
+
+task LEDGER CORE_READY -> LEDGER_DONE:
+  title "ledger module"
+  description "一貫した読取像・原子的変更・競合制御を実装・単独検証する。"
+  estimate:
+    optimistic 3p
+    most_likely 5p
+    pessimistic 8p
+  status planned
+
+task CANDIDATE CORE_READY -> CANDIDATE_DONE:
+  title "candidate module"
+  description "埋め込み/全文の方式選択と候補順位を実装・単独検証する。"
+  estimate:
+    optimistic 3p
+    most_likely 5p
+    pessimistic 8p
+  status planned
+
+task ASSOCIATION CORE_READY -> ASSOCIATION_DONE:
+  title "association module"
+  description "入出関係・統計・予算内表示を実装・単独検証する。"
+  estimate:
+    optimistic 3p
+    most_likely 5p
+    pessimistic 8p
+  status planned
+
+task RECORD CORE_READY -> RECORD_DONE:
+  title "record module"
+  description "同ID訂正・別ID変化/終了・訂正削除とカスケードを実装・単独検証する。"
+  estimate:
+    optimistic 3p
+    most_likely 5p
+    pessimistic 8p
+  status planned
+
+task MEMBERSHIP CORE_READY -> MEMBERSHIP_DONE:
+  title "membership module"
+  description "所属付替え・部分木移動を実装・単独検証する。"
+  estimate:
+    optimistic 2p
+    most_likely 3p
+    pessimistic 5p
+  status planned
+
+gate SEARCH_CANDIDATE CANDIDATE_DONE -> SEARCH_READY:
+  reason "readはcandidateの公開APIを使う"
+
+gate SEARCH_ASSOCIATION ASSOCIATION_DONE -> SEARCH_READY:
+  reason "readはassociationの公開APIを使う"
+
+task READ SEARCH_READY -> READ_DONE:
+  title "read module"
+  description "記録・関係のID取得・一覧・検索を実装・単独検証する。"
+  estimate:
+    optimistic 2p
+    most_likely 3p
+    pessimistic 5p
+  status planned
+
+gate ASSEMBLE_BODY BODY_DONE -> MODULES_READY:
+  reason "CLI実接続にBODY公開APIを使う"
+
+gate ASSEMBLE_EMBED EMBED_DONE -> MODULES_READY:
+  reason "CLI実接続にEMBED公開APIを使う"
+
+gate ASSEMBLE_RELATION RELATION_DONE -> MODULES_READY:
+  reason "CLI実接続にRELATION公開APIを使う"
+
+gate ASSEMBLE_REFERENCE REFERENCE_DONE -> MODULES_READY:
+  reason "CLI実接続にREFERENCE公開APIを使う"
+
+gate ASSEMBLE_LEDGER LEDGER_DONE -> MODULES_READY:
+  reason "CLI実接続にLEDGER公開APIを使う"
+
+gate ASSEMBLE_CANDIDATE CANDIDATE_DONE -> MODULES_READY:
+  reason "CLI実接続にCANDIDATE公開APIを使う"
+
+gate ASSEMBLE_ASSOCIATION ASSOCIATION_DONE -> MODULES_READY:
+  reason "CLI実接続にASSOCIATION公開APIを使う"
+
+gate ASSEMBLE_RECORD RECORD_DONE -> MODULES_READY:
+  reason "CLI実接続にRECORD公開APIを使う"
+
+gate ASSEMBLE_MEMBERSHIP MEMBERSHIP_DONE -> MODULES_READY:
+  reason "CLI実接続にMEMBERSHIP公開APIを使う"
+
+gate ASSEMBLE_READ READ_DONE -> MODULES_READY:
+  reason "CLI実接続にREAD公開APIを使う"
+
+gate ASSEMBLE_CLI_SURFACE CLI_SURFACE_DONE -> MODULES_READY:
+  reason "CLI実接続に入出力目録を使う"
+
+task CLI_WIRING MODULES_READY -> CLI_WIRED:
+  title "CLI実接続"
+  description "CLIの公開操作を下位moduleの実装とworker入口へ接続する。"
+  estimate:
+    optimistic 2p
+    most_likely 3p
+    pessimistic 5p
+  status planned
+
+task INTEGRATION_VERIFY CLI_WIRED -> CAPABILITY_VERIFIED:
+  title "Accepted受入例と結合境界を検証"
+  description "一時XDGの実CLI/workerでAccepted要件の例1〜7、失敗・競合・再開を検証する。"
+  estimate:
+    optimistic 3p
+    most_likely 5p
+    pessimistic 8p
+  status planned
+
+gate SEAL_DESIGN_BEFORE_SOURCE DESIGN_SEALED -> SOURCE_SEALED:
+  reason "source/testのCause先となる設計Sealが必要"
+
+task SEAL_SOURCE CAPABILITY_VERIFIED -> SOURCE_SEALED:
+  title "新規ソース・テストの由来を登録"
+  description "維持対象のGo module・CLI・テストのREFを登録し、Causeとstaleを点検する。"
+  estimate:
+    optimistic 1p
+    most_likely 2p
+    pessimistic 4p
+  status planned
+
+gate READY_VERIFIED CAPABILITY_VERIFIED -> PRODUCT_READY:
+  reason "Accepted機能の実能力検証が必要"
+
+gate READY_DOCS DOCS_DONE -> PRODUCT_READY:
+  reason "現行利用者向け文書が必要"
+
+gate READY_SOURCE SOURCE_SEALED -> PRODUCT_READY:
+  reason "維持対象ソースの由来が必要"
+
+milestone_criterion_set MODEL_DONE_CRITERIA:
+  milestone MODEL_DONE
+  revision R1
+  commitment sha256:9cd570fe035c2818173eaf273d9fbd1599f5711f996c10dfd25c6a237f819a6e
+  criterion DONE required test "modelの値と不変条件を単独で検証する。"
+
+milestone_criterion_set DOMAIN_DONE_CRITERIA:
+  milestone DOMAIN_DONE
+  revision R1
+  commitment sha256:6317310a1bd7e43bfd0edcf55b0d7e8bc9a40e1b1215ad0ad3a0d34a73a239e4
+  criterion DONE required test "domainのcanonical pathと部分木・移動対応を単独で検証する。"
+
+milestone_criterion_set CORE_READY_CRITERIA:
+  milestone CORE_READY
+  revision R1
+  commitment sha256:f719a67e2039be4cee0ba77427733236e5c3747079c2040e00c3726e7f218499
+  criterion DONE required artifact "両moduleの公開型・契約が依存側の実装に利用できる。"
+
+milestone_criterion_set BODY_DONE_CRITERIA:
+  milestone BODY_DONE
+  revision R1
+  commitment sha256:a6caa3a8ff084e18f3c6ec596aaa08f9e931c8d512eab0f9937962dbaaaad977
+  criterion DONE required test "内容アドレス保管と失敗境界を検証する。"
+
+milestone_criterion_set EMBED_DONE_CRITERIA:
+  milestone EMBED_DONE
+  revision R1
+  commitment sha256:4c7d8cf7a70bbae7588ea8cdf797c7eed584b97fd996de0964107d912f213e67
+  criterion DONE required test "別プロセスworkerの非同期処理・ベクトル成果を検証する。"
+
+milestone_criterion_set RELATION_DONE_CRITERIA:
+  milestone RELATION_DONE
+  revision R1
+  commitment sha256:86e2f380f2c26e4c2d00c36977543ad0f8d931da20123fec4e6ce1793dd65691
+  criterion DONE required test "関係の作成・訂正・訂正削除を検証する。"
+
+milestone_criterion_set REFERENCE_DONE_CRITERIA:
+  milestone REFERENCE_DONE
+  revision R1
+  commitment sha256:c666369e603640fc9cdda26712e31436c14c6c7eb2d6d80a8f79eee4ea33e264
+  criterion DONE required test "源・範囲・解決不能を検証する。"
+
+milestone_criterion_set LEDGER_DONE_CRITERIA:
+  milestone LEDGER_DONE
+  revision R1
+  commitment sha256:74c45aa49185ffb264f47c7ab2d1fc4d0b030c711269a0684e7081cfc0ac5f84
+  criterion DONE required test "読取像・原子的変更・競合を検証する。"
+
+milestone_criterion_set CANDIDATE_DONE_CRITERIA:
+  milestone CANDIDATE_DONE
+  revision R1
+  commitment sha256:a2a53667e7d760974df746d29b006407e2143afc7c79cfe4b4a29ec56ea4cd91
+  criterion DONE required test "埋め込み/全文の方式選択と候補順位を検証する。"
+
+milestone_criterion_set ASSOCIATION_DONE_CRITERIA:
+  milestone ASSOCIATION_DONE
+  revision R1
+  commitment sha256:d7a4a8733919c1580531eadc18e2c47bdf1ad55faa44804c1f63b7a576b5d699
+  criterion DONE required test "入出リンク・統計・予算内表示を検証する。"
+
+milestone_criterion_set RECORD_DONE_CRITERIA:
+  milestone RECORD_DONE
+  revision R1
+  commitment sha256:d6cfddec73fec28d46485e26017ce1cb4b17f2a8f2c9b1ad8eff4acce6d489c3
+  criterion DONE required test "訂正・変化/終了・訂正削除を検証する。"
+
+milestone_criterion_set MEMBERSHIP_DONE_CRITERIA:
+  milestone MEMBERSHIP_DONE
+  revision R1
+  commitment sha256:e5f19a4d9de6cda773c8a1d5ce3c5923d67d563c8686193059bd4080f04a9737
+  criterion DONE required test "所属付替えと部分木移動を検証する。"
+
+milestone_criterion_set SEARCH_READY_CRITERIA:
+  milestone SEARCH_READY
+  revision R1
+  commitment sha256:5d71f3cacc6e35c52acba8482d0bc89b454b361aeca1cf420c115736bc4bc66e
+  criterion DONE required artifact "candidateとassociationの公開契約がreadから利用できる。"
+
+milestone_criterion_set READ_DONE_CRITERIA:
+  milestone READ_DONE
+  revision R1
+  commitment sha256:bfd6b49197fa2f50d1a10c17e1ce7255df97d373d54d3766088c1f7ad4d20b86
+  criterion DONE required test "ID取得・一覧・検索を検証する。"
+
+milestone_criterion_set CLI_SURFACE_DONE_CRITERIA:
+  milestone CLI_SURFACE_DONE
+  revision R1
+  commitment sha256:3b78346e3419d3172d4da5fdf0ba0ec0e8f94ad3b9792e7ec89d99fc76eb141f
+  criterion DONE required test "引数/JSON、text/JSON、help・schema・補完・manを型付き境界で検証する。"
+
+milestone_criterion_set MODULES_READY_CRITERIA:
+  milestone MODULES_READY
+  revision R1
+  commitment sha256:9e07ea1629cbd93fd12cbd0905f417b12237c15409861998fc603afcd6cd3146
+  criterion DONE required artifact "12の下位moduleの公開契約とCLI入出力の独立部分が揃う。"
+
+milestone_criterion_set CLI_WIRED_CRITERIA:
+  milestone CLI_WIRED
+  revision R1
+  commitment sha256:38e125738d17e254acdd223f0435b3a4d5a166b41f67536663ef68a1a51e1a50
+  criterion DONE required test "公開操作を実moduleと二つの実プロセスに接続する。"
+
+milestone_criterion_set CAPABILITY_VERIFIED_CRITERIA:
+  milestone CAPABILITY_VERIFIED
+  revision R1
+  commitment sha256:d8bae1b22db7bb54e6d760d2ada87cada5c97193e46cf4cdc84c93a849dcb429
+  criterion DONE required test "v7要件の受入例1〜7と詳細設計の結合検証を一時XDGで通す。"
+
+milestone_criterion_set DOCS_DONE_CRITERIA:
+  milestone DOCS_DONE
+  revision R1
+  commitment sha256:42013d07e4c81337f2643f523069d6e079051652d296061771a3f0cc41207d8b
+  criterion DONE required artifact "architecture.mdとCLI文書・利用者向け目録を受入契約に整合させる。"
+
+milestone_criterion_set DESIGN_SEALED_CRITERIA:
+  milestone DESIGN_SEALED
+  revision R1
+  commitment sha256:7b6eb92f198f441d9ed5ed0d498357853e8c762642e278ee524a4239148aedc3
+  criterion DONE required artifact "受入済み設計・CLI契約と受入記録を正確な上流SealにCause登録する。"
+
+milestone_criterion_set SOURCE_SEALED_CRITERIA:
+  milestone SOURCE_SEALED
+  revision R1
+  commitment sha256:4c6e19f887355fe9e88d6d5d31c80140e7213e5e83a3fb86f3bd1977d1331de3
+  criterion DONE required artifact "維持対象のsource/test REFを正確な設計SealにCause登録する。"
+
+milestone_criterion_set PRODUCT_READY_CRITERIA:
+  milestone PRODUCT_READY
+  revision R1
+  commitment sha256:d30d61003afac6447f6e19a21016f1d8c894370f12d2af325059142b730f76d1
+  criterion DONE required test "実CLIとworkerでAccepted受入例が通り、現行文書と由来が整う。"
+
+milestone_criterion_set CONTRACT_CRITERIA:
+  milestone CONTRACT_READY
+  revision R1
+  commitment sha256:e1cdbccec620fb6833a720c3f8c8219ddd5e915114061852209ff903cde23754
+  criterion DOCS required artifact "Accepted要件・基本設計・詳細設計・CLI契約の4受入記録を確認する"
+
+milestone_acceptance_receipt RCPT_CONTRACT_DOCS:
   model 1
-  task LOCK_SCHEMA
-  kind start
-  occurred_at 2026-09-22T15:12:30+09:00
-  planned_value 2p
-
-work_event LOCK_SCHEMA_FINISH:
-  model 1
-  task LOCK_SCHEMA
-  kind finish
-  occurred_at 2026-09-22T15:17:12+09:00
-  active_time 47/600h
-  effort 47/600ph
-
-work_event IMPLEMENT_STORE_START:
-  model 1
-  task IMPLEMENT_STORE
-  kind start
-  occurred_at 2026-09-22T16:33:05+09:00
-  planned_value 3p
-
-work_event IMPLEMENT_STORE_FINISH:
-  model 1
-  task IMPLEMENT_STORE
-  kind finish
-  occurred_at 2026-09-22T16:39:35+09:00
-  active_time 13/120h
-  effort 13/120ph
-
-work_event IMPLEMENT_RECORDS_START:
-  model 1
-  task IMPLEMENT_RECORDS
-  kind start
-  occurred_at 2026-09-22T16:43:45+09:00
-  planned_value 4p
-
-work_event IMPLEMENT_RECORDS_FINISH:
-  model 1
-  task IMPLEMENT_RECORDS
-  kind finish
-  occurred_at 2026-09-22T16:50:32+09:00
-  active_time 407/3600h
-  effort 407/3600ph
-
-work_event IMPLEMENT_ORDER_START:
-  model 1
-  task IMPLEMENT_ORDER
-  kind start
-  occurred_at 2026-09-22T17:37:34+09:00
-  planned_value 2p
-
-work_event IMPLEMENT_SCOPE_START:
-  model 1
-  task IMPLEMENT_SCOPE
-  kind start
-  occurred_at 2026-09-22T17:37:34+09:00
-  planned_value 3p
-
-work_event IMPLEMENT_EMBED_START:
-  model 1
-  task IMPLEMENT_EMBED
-  kind start
-  occurred_at 2026-09-22T17:37:34+09:00
-  planned_value 4p
-
-work_event IMPLEMENT_ORDER_FINISH:
-  model 1
-  task IMPLEMENT_ORDER
-  kind finish
-  occurred_at 2026-09-22T18:09:53+09:00
-  active_time 1939/3600h
-  effort 421/3600ph
-
-work_event IMPLEMENT_SCOPE_FINISH:
-  model 1
-  task IMPLEMENT_SCOPE
-  kind finish
-  occurred_at 2026-09-22T18:09:53+09:00
-  active_time 1939/3600h
-  effort 761/3600ph
-
-work_event IMPLEMENT_EMBED_FINISH:
-  model 1
-  task IMPLEMENT_EMBED
-  kind finish
-  occurred_at 2026-09-22T18:09:53+09:00
-  active_time 1939/3600h
-  effort 0.45ph
-
-work_event IMPLEMENT_QUERY_START:
-  model 1
-  task IMPLEMENT_QUERY
-  kind start
-  occurred_at 2026-09-22T18:12:17+09:00
-  planned_value 3p
-
-work_event IMPLEMENT_QUERY_FINISH:
-  model 1
-  task IMPLEMENT_QUERY
-  kind finish
-  occurred_at 2026-09-22T18:13:50+09:00
-  active_time 31/1200h
-  effort 31/1200ph
-
-work_event ACCEPTANCE_START:
-  model 1
-  task ACCEPTANCE
-  kind start
-  occurred_at 2026-09-22T18:17:24+09:00
-  planned_value 2p
-
-work_event ACCEPTANCE_FINISH:
-  model 1
-  task ACCEPTANCE
-  kind finish
-  occurred_at 2026-09-22T18:18:55+09:00
-  active_time 91/3600h
-  effort 91/3600ph
+  set CONTRACT_CRITERIA
+  set_commitment sha256:e1cdbccec620fb6833a720c3f8c8219ddd5e915114061852209ff903cde23754
+  criterion DOCS
+  criterion_commitment sha256:b8b4226d28e23922d9389fea089a934594073bbb6224dc52ff0991fd9f7abd00
+  action verify
+  evidence_kind artifact
+  evidence_reference "docs/requirements-crud-associative-v7-acceptance.md#sha256=2eeb998188139e0f033b660c67d8b014e1c8489928481f351e475898f40db34d; docs/architecture-v7-acceptance.md#sha256=fa43bf4b19f0bdbabc0f9667c1ba79743efe516ad4a049ab0824506f51e66403; docs/detailed-design-v7-acceptance.md#sha256=926adcccf8f98850797a1388b3ce81a1fa10a7fdeeb72b3b80d0d4cf1033c9ad; docs/cli-contract-v7-acceptance.md#sha256=f3d4fa0e77f156a89117e22f9fc7c005f240981805a9b495e8c12ae163ce0862"
+  evidence_revision none
+  verifier codex
+  occurred_at 2026-09-29T06:53:12Z
