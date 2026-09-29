@@ -116,7 +116,7 @@ task MODEL CONTRACT_READY -> MODEL_DONE:
     optimistic 2p
     most_likely 3p
     pessimistic 5p
-  status planned
+  status done
 
 task DOMAIN CONTRACT_READY -> DOMAIN_DONE:
   title "domain module"
@@ -147,7 +147,7 @@ task DOCS_SYNC CONTRACT_READY -> DOCS_DONE:
 
 task SEAL_DESIGN CONTRACT_READY -> DESIGN_SEALED:
   title "Accepted設計のSealGraph由来を登録"
-  description "受入済み詳細設計・CLI契約と受入記録を正確な上流SealへCause登録する。"
+  description "未登録の詳細設計候補・受入記録、CLI契約候補・受入記録の4文書を、正確な上流SealへCause登録する。登録済みのv7要件・基本設計の4文書にある複数語Cause messageは、Accepted詳細設計が継承する1トークン規則に沿う訂正手順を確認して是正する。受入版SHA、Cause、stale、fsckとGit差分を照合する。"
   estimate:
     optimistic 1p
     most_likely 2p
@@ -478,3 +478,29 @@ milestone_acceptance_receipt RCPT_CONTRACT_DOCS:
   evidence_revision none
   verifier codex
   occurred_at 2026-09-29T06:53:12Z
+
+work_event WE-bb18c500ee789005b7363fbcb9d1983407392e47192dc375a7f2327fbc0b4cab:
+  model 1
+  task MODEL
+  kind start
+  occurred_at 2026-09-29T19:14:59+09:00
+  planned_value 19/6p
+
+work_event WE-8d0d518472d71d0a20d3dad0010948bbecf347d23996c4f4669089d77cbc6a6a:
+  model 1
+  task MODEL
+  kind finish
+  occurred_at 2026-09-29T19:20:06+09:00
+
+milestone_acceptance_receipt RCPT_MODEL_TEST_20260929:
+  model 1
+  set MODEL_DONE_CRITERIA
+  set_commitment sha256:9cd570fe035c2818173eaf273d9fbd1599f5711f996c10dfd25c6a237f819a6e
+  criterion DONE
+  criterion_commitment sha256:a60bf06a3db8b09fa8c6a4c7d91209e781a7cd6c49528cd99902580d9e6f4db0
+  action verify
+  evidence_kind test
+  evidence_reference "modules/model/model.go#sha256=56a635e09de392dac22a498f75bb7685691c5c673299d74ffd3709da8277defc; modules/model/model_test.go#sha256=28a08b2b1f76a0a7e7b9f41564b8cec04116782b30bf20ad0268e2a0aa7026af; (cd modules/model && go test ./... && go vet ./...); go list -deps shows only model and standard packages"
+  evidence_revision none
+  verifier codex
+  occurred_at 2026-09-29T10:20:36Z
