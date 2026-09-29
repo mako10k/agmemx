@@ -118,7 +118,7 @@ task DOMAIN CONTRACT_READY -> DOMAIN_DONE:
     optimistic 1p
     most_likely 2p
     pessimistic 4p
-  status planned
+  status done
 
 task CLI_SURFACE CONTRACT_READY -> CLI_SURFACE_DONE:
   title "CLI入出力の独立部分"
@@ -485,3 +485,42 @@ milestone_acceptance_receipt RCPT_MODEL_TEST_20260929:
   evidence_revision none
   verifier codex
   occurred_at 2026-09-29T10:20:36Z
+
+work_event WE-2b37a4081a0d455489fca28fadb112718eedcc25019ddb1ed040a90e1480fe2f:
+  model 1
+  task DOMAIN
+  kind start
+  occurred_at 2026-09-29T20:09:14+09:00
+  planned_value 13/6p
+
+work_event WE-9529ea18bf7322b6e9e48db6eea4b65f7c7f9edbeb337eb6f0978d5dacbfdc20:
+  model 1
+  task DOMAIN
+  kind finish
+  occurred_at 2026-09-29T20:12:18+09:00
+
+milestone_acceptance_receipt RCPT_DOMAIN_TEST_20260929:
+  model 1
+  set DOMAIN_DONE_CRITERIA
+  set_commitment sha256:6317310a1bd7e43bfd0edcf55b0d7e8bc9a40e1b1215ad0ad3a0d34a73a239e4
+  criterion DONE
+  criterion_commitment sha256:87a1ef0a461ba1f1eaf795a29fb04c21c77b10ad82ce7f38bb025722b4d2f340
+  action verify
+  evidence_kind test
+  evidence_reference "modules/domain/domain.go#sha256=3db5517da49aa82b52e6daefbbd7ba56fc89e11c6e2de12eeef01c7250f0a1d2; modules/domain/domain_test.go#sha256=8b93fa8e701ca3032f3feff6a724634647c50e5ece44c72cb7af80f65075eb07; (cd modules/domain && go test ./... && go vet ./...); go list -deps shows only domain and standard packages"
+  evidence_revision none
+  verifier codex
+  occurred_at 2026-09-29T11:12:18Z
+
+milestone_acceptance_receipt RCPT_CORE_API_20260929:
+  model 1
+  set CORE_READY_CRITERIA
+  set_commitment sha256:f719a67e2039be4cee0ba77427733236e5c3747079c2040e00c3726e7f218499
+  criterion DONE
+  criterion_commitment sha256:c712a6b88ac3f6011a75ed7453db25e99e50d9480598bed5705180292600a96b
+  action verify
+  evidence_kind artifact
+  evidence_reference "modules/model/go.mod#sha256=59649b11595ed199a6d9fabc64b7b98536d931baad1cb4ddd3ea4b3ad0caf6ef; modules/model/model.go#sha256=56a635e09de392dac22a498f75bb7685691c5c673299d74ffd3709da8277defc; modules/domain/go.mod#sha256=3cf022f8026a9aa31481599287a3632c1de8d810898d114a9a02bdbac905286a; modules/domain/domain.go#sha256=3db5517da49aa82b52e6daefbbd7ba56fc89e11c6e2de12eeef01c7250f0a1d2; independent temporary consumer imported both local modules and passed GOWORK=off GOPROXY=off go test ./..."
+  evidence_revision none
+  verifier codex
+  occurred_at 2026-09-29T11:16:45Z
